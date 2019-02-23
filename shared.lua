@@ -4,7 +4,7 @@ local data = {}
 
 data.entities =
 {
-  teleporter = "teleporter",
+  teleporter = "teleporter"
 }
 
 return data

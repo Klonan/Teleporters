@@ -115,6 +115,8 @@ local technology =
   order = "y-a"
 }
 
+local teleporter_flying_text = util.copy(data.raw["flying-text"]["tutorial-flying-text"])
+teleporter_flying_text.name = "teleporter-flying-text"
 
 data:extend
 {
@@ -123,5 +125,6 @@ data:extend
   teleporter_explosion,
   teleporter_explosion_2,
   recipe,
-  technology
+  technology,
+  teleporter_flying_text
 }

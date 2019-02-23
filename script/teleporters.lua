@@ -201,7 +201,7 @@ local on_built_entity = function(event)
   local surface = entity.surface
   local force = entity.force
   local caption = "Teleporter "..entity.unit_number
-  local text = surface.create_entity{name = "tutorial-flying-text", text = caption, position = {entity.position.x, entity.position.y - 2}, force = entity.force, color = player.chat_color}
+  local text = surface.create_entity{name = "teleporter-flying-text", text = caption, position = {entity.position.x, entity.position.y - 2}, force = entity.force, color = player.chat_color}
   text.active = false
 
   data.networks[force.name] = data.networks[force.name] or {}
