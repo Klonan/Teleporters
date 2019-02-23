@@ -1,0 +1,11 @@
+{
+  "name": "Teleporters",
+  "version": "0.1.0",
+  "title": "Teleporters",
+  "author": "Klonan",
+  "contact": "",
+  "homepage": "",
+  "description": "Adds Teleporters",
+  "dependencies": ["base >= 0.17.0"],
+  "factorio_version": "0.17"
+}
