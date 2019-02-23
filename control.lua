@@ -9,10 +9,6 @@ local libs =
   teleporters = require "script/teleporters",
 }
 
-
-remote.add_interface("tf", {get = function(func) func(libs) end})
-remote.add_interface("debug", {dump = function() log(serpent.block(global)) end})
-
 local on_event = function(event)
   for name, lib in pairs (libs) do
     if lib.on_event then
