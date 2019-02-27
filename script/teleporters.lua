@@ -6,7 +6,8 @@ local data =
   frames = {},
   button_actions = {},
   map = {},
-  teleporter_frames = {}
+  teleporter_frames = {},
+  player_linked_teleporter = {}
 }
 
 local create_flash = function(surface, position)
@@ -83,55 +84,25 @@ local deregister_teleporter_frame = function(gui)
   end
 end
 
-local gui_actions =
-{
-  cancel_button = function(event, param)
-    close_frame(param.frame)
-  end,
-  confirm_rename_button = function(event, param)
-    local flying_text = param.flying_text
-    if not (flying_text and flying_text.valid) then return end
-    local player = game.players[event.player_index]
-    if not (player and player.valid) then return end
-    local key = flying_text.text
-    local network = data.networks[player.force.name]
-    local info = network[key]
-    local new_key = param.textfield.text
-    if network[new_key] and network[new_key] ~= info then
-      player.print({"name-already-taken"})
-      return
-    end
-    if new_key ~= key then
-      network[new_key] = info
-      network[key] = nil
-      param.flying_text.text = new_key
-    end
-    close_frame(param.frame)
-  end,
-  teleport_button = function(event, param)
-    local teleport_param = param.param
-    if not teleport_param then return end
-    local destination = teleport_param.teleporter
-    if not (destination and destination.valid) then return end
-    destination.timeout = 300
-    local destination_surface = destination.surface
-    local destination_position = destination.position
-    create_flash(destination_surface, destination_position)
-    local player = game.players[event.player_index]
-    if not (player and player.valid) then return end
-    --This teleport doesn't check collisions. If someone complains, make it check 'can_place' and if false find a positions etc....
-    player.teleport(destination_position, destination_surface)
-    close_frame(param.frame)
-    local source = param.source
-    if source and source.valid then
-      create_flash(source.surface, source.position)
-      source.active = true
-    end
-    if player.character then
-      player.character.active = true
-    end
-  end
-}
+local make_rename_frame = function(player, caption)
+  local force = player.force
+  local teleporters = data.networks[force.name]
+  local param = teleporters[caption]
+  local text = param.flying_text
+  local gui = player.gui.center
+  gui.clear()
+  local frame = open_frame(gui.add{type = "frame", caption = {"name-teleporter"}, direction = "horizontal"})
+  player.opened = frame
+
+  local textfield = frame.add{type = "textfield", text = caption}
+  textfield.style.horizontally_stretchable = true
+  local confirm = frame.add{type = "sprite-button", sprite = "utility/confirm_slot", style = "slot_button"}
+  util.register_gui(data.button_actions, confirm, {type = "confirm_rename_button", frame = frame, textfield = textfield, flying_text = text})
+
+  local cancel = frame.add{type = "sprite-button", sprite = "utility/set_bar_slot", style = "slot_button"}
+  util.register_gui(data.button_actions, cancel, {type = "cancel_button", frame = frame})
+
+end
 
 local make_teleporter_gui = function(param)
   local frame = param.frame
@@ -143,16 +114,23 @@ local make_teleporter_gui = function(param)
   local network = data.networks[force.name]
   util.deregister_gui(frame, data.button_actions)
   frame.clear()
+  local title_flow = frame.add{type = "flow", direction = "horizontal"}
+  title_flow.style.vertical_align = "center"
+  local title = title_flow.add{type = "label", style = "heading_1_label"}
+  local rename_button = title_flow.add{type = "sprite-button", sprite = "utility/rename_icon_small", style = "small_slot_button"}
   local inner = frame.add{type = "frame", style = "inside_deep_frame"}
-  local scroll = inner.add{type = "scroll-pane"}
+  local scroll = inner.add{type = "scroll-pane", direction = "vertical"}
   local player = game.players[frame.player_index]
-  --scroll.style.maximal_height = player.display_resolution.height * 0.8
+  data.player_linked_teleporter[player.index] = param
   local table = scroll.add{type = "table", column_count = 4}
   table.style.horizontal_spacing = 2
   table.style.vertical_spacing = 2
   local any = false
   for name, teleporter in pairs (network) do
-    if teleporter.teleporter ~= source then
+    if teleporter.teleporter == source then
+      title.caption = name
+      util.register_gui(data.button_actions, rename_button, {type = "rename_button", caption = name})
+    else
       local button = table.add{type = "button"}--, direction = "vertical", style = "bordered_frame"}
       button.style.height = 160 + 32
       button.style.width = 160
@@ -193,6 +171,81 @@ local make_teleporter_gui = function(param)
   end
 end
 
+local gui_actions =
+{
+  rename_button = function(event, param)
+    make_rename_frame(game.get_player(event.player_index), param.caption)
+  end,
+  cancel_button = function(event, param)
+    close_frame(param.frame)
+    local teleporter_param = data.player_linked_teleporter[event.player_index]
+    if teleporter_param then
+      local player = game.get_player(event.player_index)
+      local frame = player.gui.center.add{type = "frame", direction = "vertical"}
+      player.opened = frame
+      teleporter_param.frame = frame
+      open_teleporter_frame(frame, teleporter_param)
+      make_teleporter_gui(teleporter_param)
+    end
+  end,
+  confirm_rename_button = function(event, param)
+    local flying_text = param.flying_text
+    if not (flying_text and flying_text.valid) then return end
+    local player = game.players[event.player_index]
+    if not (player and player.valid) then return end
+    local key = flying_text.text
+    local network = data.networks[player.force.name]
+    local info = network[key]
+    local new_key = param.textfield.text
+    if network[new_key] and network[new_key] ~= info then
+      player.print({"name-already-taken"})
+      return
+    end
+    if new_key ~= key then
+      network[new_key] = info
+      network[key] = nil
+      param.flying_text.text = new_key
+    end
+    close_frame(param.frame)
+    local teleporter_param = data.player_linked_teleporter[player.index]
+    if teleporter_param then
+      local frame = player.gui.center.add{type = "frame", direction = "vertical"}
+      player.opened = frame
+      teleporter_param.frame = frame
+      open_teleporter_frame(frame, teleporter_param)
+      make_teleporter_gui(teleporter_param)
+    end
+
+    for k, param in pairs (data.teleporter_frames) do
+      make_teleporter_gui(param)
+    end
+
+  end,
+  teleport_button = function(event, param)
+    local teleport_param = param.param
+    if not teleport_param then return end
+    local destination = teleport_param.teleporter
+    if not (destination and destination.valid) then return end
+    destination.timeout = 300
+    local destination_surface = destination.surface
+    local destination_position = destination.position
+    create_flash(destination_surface, destination_position)
+    local player = game.players[event.player_index]
+    if not (player and player.valid) then return end
+    --This teleport doesn't check collisions. If someone complains, make it check 'can_place' and if false find a positions etc....
+    player.teleport(destination_position, destination_surface)
+    close_frame(param.frame)
+    local source = param.source
+    if source and source.valid then
+      create_flash(source.surface, source.position)
+      source.active = true
+    end
+    if player.character then
+      player.character.active = true
+    end
+  end
+}
+
 local on_built_entity = function(event)
   local entity = event.created_entity
   if not (entity and entity.valid) then return end
@@ -213,16 +266,7 @@ local on_built_entity = function(event)
   util.deregister_gui(gui, data.frames)
   util.deregister_gui(gui, data.button_actions)
   gui.clear()
-  local frame = open_frame(gui.add{type = "frame", caption = {"name-teleporter"}, direction = "horizontal"})
-  player.opened = frame
-
-  local textfield = frame.add{type = "textfield", text = caption}
-  textfield.style.horizontally_stretchable = true
-  local confirm = frame.add{type = "sprite-button", sprite = "utility/confirm_slot", style = "slot_button"}
-  util.register_gui(data.button_actions, confirm, {type = "confirm_rename_button", frame = frame, textfield = textfield, flying_text = text})
-
-  local cancel = frame.add{type = "sprite-button", sprite = "utility/set_bar_slot", style = "slot_button"}
-  util.register_gui(data.button_actions, cancel, {type = "cancel_button", frame = frame})
+  make_rename_frame(player, caption)
 
   for k, param in pairs (data.teleporter_frames) do
     make_teleporter_gui(param)
@@ -265,9 +309,7 @@ local teleporter_triggered = function(entity)
   util.deregister_gui(gui, data.frames)
   util.deregister_gui(gui, data.button_actions)
   gui.clear()
-  local frame = gui.add{type = "frame", direction = "vertical", caption = {"teleporter-network"}}
-  frame.style.maximal_height = player.display_resolution.height * 0.9
-  frame.style.maximal_width = player.display_resolution.width * 0.9
+  local frame = gui.add{type = "frame", direction = "vertical"}
   player.opened = frame
   local gui_param = {frame = frame, source = new_teleporter, force = force}
   open_teleporter_frame(frame, gui_param)
@@ -324,12 +366,10 @@ local on_gui_closed = function(event)
 end
 
 local on_player_removed = function(event)
-  local player = game.players[event.player_index]
+  local player = game.get_player(event.player_index)
+  if player.opened_gui_type ~= defines.gui_type.custom then return end
   local frame = player.opened
   if not (frame and frame.valid) then return end
-
-  --So, fuck knows anyway to check this is a proper gui element, just pcall some shit
-  if not pcall(function() local check = frame.index end) then return end
 
   if get_frame(frame) then
     close_frame(frame)
@@ -371,6 +411,11 @@ end
 
 teleporters.get_events = function()
   return events
+end
+
+teleporters.on_configuration_changed = function()
+  -- 0.1.2 addition...
+  data.player_linked_teleporter = data.player_linked_teleporter or {}
 end
 
 return teleporters
