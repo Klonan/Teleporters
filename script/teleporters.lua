@@ -254,7 +254,14 @@ local on_built_entity = function(event)
   local surface = entity.surface
   local force = entity.force
   local caption = "Teleporter "..entity.unit_number
-  local text = surface.create_entity{name = "teleporter-flying-text", text = caption, position = {entity.position.x, entity.position.y - 2}, force = entity.force, color = player.chat_color}
+  local text = surface.create_entity
+  {
+    name = "teleporter-flying-text",
+    text = caption,
+    position = {entity.position.x, entity.position.y - 2},
+    force = entity.force,
+    color = player.chat_color
+  }
   text.active = false
 
   data.networks[force.name] = data.networks[force.name] or {}
@@ -295,7 +302,13 @@ local teleporter_triggered = function(entity)
   local surface = entity.surface
   local position = entity.position
   local param = data.map[entity.unit_number]
-  local new_teleporter = surface.create_entity{name = teleporter_name, position = position, force = force}
+  local new_teleporter = surface.create_entity
+  {
+    name = teleporter_name,
+    position = position,
+    force = force,
+    create_build_effect_smoke = false
+  }
   param.teleporter = new_teleporter
   data.map[new_teleporter.unit_number] = param
   data.map[entity.unit_number] = nil
