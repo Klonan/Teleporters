@@ -41,8 +41,7 @@ teleporter.picture_set_enemy =
   tint = {r = 1}
 }
 teleporter.minable = {result = name, mining_time = 3}
-util.remove_flag(teleporter, "placeable-off-grid")
-util.remove_flag(teleporter, "not-on-map")
+teleporter.flags = {"not-blueprintable", "placeable-neutral", "placeable-player", "player-creation", "not-upgradable"}
 teleporter.collision_box = {{-1, -1},{1, 1}}
 teleporter.selection_box = {{-1, -1},{1, 1}}
 teleporter.map_color = {r = 0.5, g = 1, b = 1}
