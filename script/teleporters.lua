@@ -61,7 +61,7 @@ local make_rename_frame = function(player, caption)
   local textfield = frame.add{type = "textfield", text = caption}
   textfield.style.horizontally_stretchable = true
   local confirm = frame.add{type = "sprite-button", sprite = "utility/confirm_slot", style = "slot_button"}
-  util.register_gui(data.button_actions, confirm, {type = "confirm_rename_button", textfield = textfield, flying_text = text})
+  util.register_gui(data.button_actions, confirm, {type = "confirm_rename_button", textfield = textfield, flying_text = text, tag = param.tag})
 
   local cancel = frame.add{type = "sprite-button", sprite = "utility/set_bar_slot", style = "slot_button"}
   util.register_gui(data.button_actions, cancel, {type = "cancel_rename"})
@@ -196,6 +196,10 @@ local gui_actions =
       network[new_key] = info
       network[key] = nil
       param.flying_text.text = new_key
+      if param.tag and param.tag.valid then
+        param.tag.text = new_key
+        param.tag.last_user = player
+      end
     end
     close_gui(get_rename_frame(player))
     check_player_linked_teleporter(player)
@@ -243,10 +247,20 @@ local on_robot_built_entity = function(event)
   }
   text.active = false
 
+  local tag = force.add_chart_tag(surface,
+  {
+    icon = { type = "item", name = teleporter_name},
+    position = entity.position,
+    text = caption
+  }
+  )
+
   data.networks[force.name] = data.networks[force.name] or {}
   local network = data.networks[force.name]
-  network[caption] = {teleporter = entity, flying_text = text}
-  data.map[entity.unit_number] = network[caption]
+  local teleport_data = {teleporter = entity, flying_text = text, tag = tag}
+  network[caption] = teleport_data
+  data.map[entity.unit_number] = teleport_data
+
   refresh_teleporter_frames()
 end
 
@@ -268,10 +282,21 @@ local on_built_entity = function(event)
   }
   text.active = false
 
+  local tag = force.add_chart_tag(surface,
+  {
+    icon = { type = "item", name = teleporter_name},
+    position = entity.position,
+    text = caption,
+    last_user = player
+  }
+  )
+
   data.networks[force.name] = data.networks[force.name] or {}
   local network = data.networks[force.name]
-  network[caption] = {teleporter = entity, flying_text = text}
-  data.map[entity.unit_number] = network[caption]
+  local teleport_data = {teleporter = entity, flying_text = text, tag = tag}
+  network[caption] = teleport_data
+  data.map[entity.unit_number] = teleport_data
+
   make_rename_frame(player, caption)
   refresh_teleporter_frames()
 end
@@ -286,6 +311,12 @@ local on_teleporter_removed = function(entity)
   local network = data.networks[force.name]
   network[caption] = nil
   param.flying_text.destroy()
+
+  local tag = param.tag
+  if tag and tag.valid then
+    tag.destroy()
+  end
+
   data.map[entity.unit_number] = nil
   data.to_be_removed[entity.unit_number] = true
   refresh_teleporter_frames()
