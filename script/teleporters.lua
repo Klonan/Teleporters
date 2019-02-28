@@ -1,4 +1,4 @@
-local teleporter_name = require"shared".entities.teleporter
+local teleporter_name = require("shared").entities.teleporter
 
 local data =
 {
@@ -22,7 +22,6 @@ local create_flash = function(surface, position)
     surface.create_entity{name = "teleporter-explosion-no-sound", position = position}
   end
 end
-
 
 local clear_gui = function(frame)
   if not (frame and frame.valid) then return end
@@ -343,8 +342,6 @@ local teleporter_triggered = function(entity)
   make_teleporter_gui(player, new_teleporter)
 end
 
-
-
 local on_entity_died = function(event)
   local cause = event.cause
   local entity = event.entity
@@ -395,7 +392,6 @@ local on_gui_closed = function(event)
     unlink_teleporter(player)
     return
   end
-
 
 end
 
@@ -451,8 +447,8 @@ end
 teleporters.on_configuration_changed = function()
   -- 0.1.2 migration.
   data.player_linked_teleporter = data.player_linked_teleporter or {}
-  data.rename_frames = data.frames or {}
-  data.to_be_removed = {}
+  data.rename_frames = data.rename_frames or data.frames or {}
+  data.to_be_removed = data.to_be_removed or {}
 end
 
 return teleporters
