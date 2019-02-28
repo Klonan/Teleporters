@@ -13,7 +13,7 @@ teleporter.dying_explosion = nil
 teleporter.action = nil
 teleporter.force_die_on_attack = true
 teleporter.trigger_force = "friend"
-teleporter.create_ghost_on_death = false
+--teleporter.create_ghost_on_death = false
 teleporter.order = name
 teleporter.picture_safe =
 {
@@ -41,7 +41,14 @@ teleporter.picture_set_enemy =
   tint = {r = 1}
 }
 teleporter.minable = {result = name, mining_time = 3}
-teleporter.flags = {"not-blueprintable", "placeable-neutral", "placeable-player", "player-creation", "not-upgradable"}
+teleporter.flags =
+{
+  --"not-blueprintable",
+  "placeable-neutral",
+  "placeable-player",
+  "player-creation",
+  "not-upgradable"
+}
 teleporter.collision_box = {{-1, -1},{1, 1}}
 teleporter.selection_box = {{-1, -1},{1, 1}}
 teleporter.map_color = {r = 0.5, g = 1, b = 1}
