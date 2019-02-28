@@ -36,28 +36,15 @@ local close_gui = function(frame)
 end
 
 local get_rename_frame = function(player)
-  return data.rename_frames[player.index]
+  local frame = data.rename_frames[player.index]
+  if frame and frame.valid then return frame end
+  data.rename_frames[player.index] = nil
 end
 
 local get_teleporter_frame = function(player)
-  return data.teleporter_frames[player.index]
-end
-
-local close_teleporter_frame = function(player)
-  local frame = get_teleporter_frame(player)
-  if not frame and frame.valid then return end
-  local player = game.players[frame.player_index]
-  local character = player.character
-  if character then
-    character.active = true
-  end
-  local source = param.source
-  if (source and source.valid) then
-    source.active = true
-  end
-  close_gui(frame)
-  --print("Set linked to nil")
-  data.player_linked_teleporter[player.index] = nil
+  local frame = data.teleporter_frames[player.index]
+  if frame and frame.valid then return frame end
+  data.teleporter_frames[player.index] = nil
 end
 
 local make_rename_frame = function(player, caption)
@@ -74,10 +61,10 @@ local make_rename_frame = function(player, caption)
   local textfield = frame.add{type = "textfield", text = caption}
   textfield.style.horizontally_stretchable = true
   local confirm = frame.add{type = "sprite-button", sprite = "utility/confirm_slot", style = "slot_button"}
-  util.register_gui(data.button_actions, confirm, {type = "confirm_rename_button", frame = frame, textfield = textfield, flying_text = text})
+  util.register_gui(data.button_actions, confirm, {type = "confirm_rename_button", textfield = textfield, flying_text = text})
 
   local cancel = frame.add{type = "sprite-button", sprite = "utility/set_bar_slot", style = "slot_button"}
-  util.register_gui(data.button_actions, cancel, {type = "cancel_button", frame = frame})
+  util.register_gui(data.button_actions, cancel, {type = "cancel_rename"})
 
 end
 
@@ -92,7 +79,7 @@ local unlink_teleporter = function(player)
 end
 
 local make_teleporter_gui = function(player, source)
-  
+
   if not (source and source.valid and not data.to_be_removed[source.unit_number]) then
     unlink_teleporter(player)
     return
@@ -153,9 +140,7 @@ local make_teleporter_gui = function(player, source)
       label.style.horizontally_stretchable = true
       label.style.maximal_width = 160 - 8
       label.style.want_ellipsis = true
-
-      util.register_gui(data.button_actions, button, {type = "teleport_button", param = teleporter, frame = frame, source = source})
-
+      util.register_gui(data.button_actions, button, {type = "teleport_button", param = teleporter})
       any = true
     end
   end
@@ -165,12 +150,16 @@ local make_teleporter_gui = function(player, source)
 end
 
 local refresh_teleporter_frames = function()
+  local players = game.players
   for player_index, source in pairs (data.player_linked_teleporter) do
-    make_teleporter_gui(game.get_player(player_index), source)
+    local player = players[player_index]
+    if get_teleporter_frame(player) then
+      make_teleporter_gui(player, source)
+    end
   end
 end
 
-local check_player_linked_teleporter = function(player)  
+local check_player_linked_teleporter = function(player)
   local source = data.player_linked_teleporter[player.index]
   if source and source.valid then
     --print("Linked teleporter exists...")
@@ -185,9 +174,10 @@ local gui_actions =
   rename_button = function(event, param)
     make_rename_frame(game.get_player(event.player_index), param.caption)
   end,
-  cancel_button = function(event, param)
-    close_gui(param.frame)
-    check_player_linked_teleporter(game.get_player(event.player_index))
+  cancel_rename = function(event, param)
+    local player = game.get_player(event.player_index)
+    close_gui(get_rename_frame(player))
+    check_player_linked_teleporter(player)
   end,
   confirm_rename_button = function(event, param)
     local flying_text = param.flying_text
@@ -207,10 +197,8 @@ local gui_actions =
       network[key] = nil
       param.flying_text.text = new_key
     end
-    close_gui(param.frame)
+    close_gui(get_rename_frame(player))
     check_player_linked_teleporter(player)
-
-
   end,
   teleport_button = function(event, param)
     local teleport_param = param.param
@@ -220,20 +208,13 @@ local gui_actions =
     destination.timeout = 300
     local destination_surface = destination.surface
     local destination_position = destination.position
-    create_flash(destination_surface, destination_position)
     local player = game.players[event.player_index]
     if not (player and player.valid) then return end
+    create_flash(destination_surface, destination_position)
+    create_flash(player.surface, player.position)
     --This teleport doesn't check collisions. If someone complains, make it check 'can_place' and if false find a positions etc....
     player.teleport(destination_position, destination_surface)
-    close_gui(param.frame)
-    local source = param.source
-    if source and source.valid then
-      create_flash(source.surface, source.position)
-      source.active = true
-    end
-    if player.character then
-      player.character.active = true
-    end
+    unlink_teleporter(player)
   end
 }
 
@@ -333,6 +314,7 @@ local teleporter_triggered = function(entity)
   if not character then return end
   local player = character.player
   if not player then return end
+  player.teleport(entity.position)
   new_teleporter.active = false
   character.active = false
   data.player_linked_teleporter[player.index] = new_teleporter
@@ -379,15 +361,14 @@ local on_gui_closed = function(event)
   local player = game.get_player(event.player_index)
 
   local rename_frame = get_rename_frame(player)
-  if rename_frame and rename_frame.valid then
-    --print("A")
+  if rename_frame then
     close_gui(rename_frame)
     check_player_linked_teleporter(player)
     return
   end
 
   local teleporter_frame = get_teleporter_frame(player)
-  if teleporter_frame and teleporter_frame.valid then
+  if teleporter_frame then
     close_gui(teleporter_frame)
     unlink_teleporter(player)
     return
@@ -397,21 +378,8 @@ end
 
 local on_player_removed = function(event)
   local player = game.get_player(event.player_index)
-  if player.opened_gui_type ~= defines.gui_type.custom then return end
-  local frame = player.opened
-  if not (frame and frame.valid) then return end
-
-  if get_rename_frame(frame) then
-    close_gui(frame)
-    return
-  end
-
-  local param = get_teleporter_frame(element)
-  if param then
-    close_teleporter_frame(param)
-    return
-  end
-
+  close_gui(get_rename_frame(player))
+  close_gui(get_teleporter_frame(player))
 end
 
 local events =
