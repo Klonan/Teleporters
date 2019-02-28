@@ -367,19 +367,14 @@ local on_gui_closed = function(event)
     return
   end
 
-  local teleporter_frame = get_teleporter_frame(player)
-  if teleporter_frame then
-    close_gui(teleporter_frame)
-    unlink_teleporter(player)
-    return
-  end
+  unlink_teleporter(player)
 
 end
 
 local on_player_removed = function(event)
   local player = game.get_player(event.player_index)
   close_gui(get_rename_frame(player))
-  close_gui(get_teleporter_frame(player))
+  unlink_teleporter(player)
 end
 
 local events =
