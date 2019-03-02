@@ -397,7 +397,7 @@ local on_robot_mined_entity = function(event)
   on_teleporter_removed(event.entity)
 end
 
-local on_gui_click = function(event)
+local on_gui_action = function(event)
   local element = event.element
   if not (element and element.valid) then return end
   local player_data = data.button_actions[event.player_index]
@@ -444,18 +444,6 @@ local resync_all_teleporters = function()
   end
 end
 
---[[on_chart_tag_modified
-
-Called when a chart tag is modified by a player.
-
-Contains
-tag :: LuaCustomChartTag
-player_index :: uint (optional)
-force :: LuaForce
-old_text :: string
-old_icon :: SignalID
-old_player_index :: uint (optional)]]
-
 local on_chart_tag_modified = function(event)
   local force = event.force
   local tag = event.tag
@@ -486,15 +474,6 @@ local on_chart_tag_modified = function(event)
   end
   rename_teleporter(force, old_name, new_name)
 end
-
---[[on_chart_tag_removed
-
-Called just before a chart tag is deleted.
-
-Contains
-tag :: LuaCustomChartTag
-force :: LuaForce
-player_index :: uint (optional)]]
 
 local on_chart_tag_removed = function(event)
   local force = event.force
@@ -529,8 +508,8 @@ local events =
 {
   [defines.events.on_built_entity] = on_built_entity,
   [defines.events.on_robot_built_entity] = on_built_entity,
-  [defines.events.on_gui_click] = on_gui_click,
-  [defines.events.on_gui_text_changed] = on_gui_click,
+  [defines.events.on_gui_click] = on_gui_action,
+  [defines.events.on_gui_text_changed] = on_gui_action,
   [defines.events.on_entity_died] = on_entity_died,
   [defines.events.on_player_mined_entity] = on_player_mined_entity,
   [defines.events.on_robot_mined_entity] = on_robot_mined_entity,
@@ -560,10 +539,12 @@ teleporters.get_events = function()
 end
 
 teleporters.on_configuration_changed = function()
-  -- 0.1.2 migration.
+  -- 0.1.2 migration...
   data.player_linked_teleporter = data.player_linked_teleporter or {}
   data.rename_frames = data.rename_frames or data.frames or {}
   data.to_be_removed = data.to_be_removed or {}
+
+  --0.1.5...
   data.teleporter_map = data.teleporter_map or data.map or {}
   data.tag_map = data.tag_map or {}
   resync_all_teleporters()
