@@ -108,9 +108,15 @@ local make_teleporter_gui = function(player, source)
   title_flow.style.vertical_align = "center"
   local title = title_flow.add{type = "label", style = "heading_1_label"}
   local rename_button = title_flow.add{type = "sprite-button", sprite = "utility/rename_icon_small", style = "small_slot_button"}
+  local pusher = title_flow.add{type = "flow", direction = "horizontal"}
+  pusher.style.horizontally_stretchable = true
+  local search_box = title_flow.add{type = "textfield", visible = false}
+  local search_button = title_flow.add{type = "sprite-button", style = "tool_button", sprite = "utility/search_icon"}
+  util.register_gui(data.button_actions, search_button, {type = "search_button", box = search_box})
   local inner = frame.add{type = "frame", style = "inside_deep_frame"}
   local scroll = inner.add{type = "scroll-pane", direction = "vertical"}
   local table = scroll.add{type = "table", column_count = 4}
+  util.register_gui(data.button_actions, search_box, {type = "search_text_changed", parent = table})
   table.style.horizontal_spacing = 2
   table.style.vertical_spacing = 2
   local any = false
@@ -120,7 +126,7 @@ local make_teleporter_gui = function(player, source)
       title.caption = name
       util.register_gui(data.button_actions, rename_button, {type = "rename_button", caption = name})
     else
-      local button = table.add{type = "button"}--, direction = "vertical", style = "bordered_frame"}
+      local button = table.add{type = "button", name = name}
       button.style.height = 160 + 32
       button.style.width = 160
       button.style.left_padding = 0
@@ -284,6 +290,18 @@ local gui_actions =
     --This teleport doesn't check collisions. If someone complains, make it check 'can_place' and if false find a positions etc....
     player.teleport(destination_position, destination_surface)
     unlink_teleporter(player)
+  end,
+  search_text_changed = function(event, param)
+    local box = event.element
+    local search = box.text
+    local parent = param.parent
+    for k, child in pairs (parent.children) do
+      child.visible = child.name:find(search)
+    end
+  end,
+  search_button = function(event, param)
+    param.box.visible = not param.box.visible
+    if param.box.visible then param.box.focus() end
   end
 }
 
@@ -512,6 +530,7 @@ local events =
   [defines.events.on_built_entity] = on_built_entity,
   [defines.events.on_robot_built_entity] = on_built_entity,
   [defines.events.on_gui_click] = on_gui_click,
+  [defines.events.on_gui_text_changed] = on_gui_click,
   [defines.events.on_entity_died] = on_entity_died,
   [defines.events.on_player_mined_entity] = on_player_mined_entity,
   [defines.events.on_robot_mined_entity] = on_robot_mined_entity,
