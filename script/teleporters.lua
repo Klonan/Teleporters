@@ -495,7 +495,7 @@ local on_chart_tag_added = function(event)
     return
   end
   local icon = tag.icon
-  if icon.type == "item" and icon.name == teleporter_name then
+  if icon and icon.type == "item" and icon.name == teleporter_name then
     --Trying to add a fake teleporter tag! JAIL!
     local player = event.player_index and game.get_player(event.player_index)
     if player and player.valid then player.print({"cant-add-tag"}) end
