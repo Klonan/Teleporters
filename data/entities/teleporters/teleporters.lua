@@ -12,7 +12,7 @@ teleporter.max_health = 200
 teleporter.dying_explosion = nil
 teleporter.action = nil
 teleporter.force_die_on_attack = true
-teleporter.trigger_force = "friend"
+teleporter.trigger_force = "all"
 --teleporter.create_ghost_on_death = false
 teleporter.order = name
 teleporter.picture_safe =
@@ -21,7 +21,7 @@ teleporter.picture_safe =
   priority = "medium",
   width = 97,
   height = 77,
-  scale = 1
+  scale = 0.75
 }
 teleporter.picture_set =
 {
@@ -29,7 +29,7 @@ teleporter.picture_set =
   priority = "medium",
   width = 97,
   height = 77,
-  scale = 1
+  scale = 0.75
 }
 teleporter.picture_set_enemy =
 {
@@ -37,8 +37,7 @@ teleporter.picture_set_enemy =
   priority = "medium",
   width = 97,
   height = 77,
-  scale = 1,
-  tint = {r = 1}
+  scale = 0.75
 }
 teleporter.minable = {result = name, mining_time = 3}
 teleporter.flags =
@@ -124,6 +123,15 @@ local technology =
 local teleporter_flying_text = util.copy(data.raw["flying-text"]["tutorial-flying-text"])
 teleporter_flying_text.name = "teleporter-flying-text"
 
+local hotkey_name = require"shared".hotkeys.focus_search
+local hotkey =
+{
+  type = "custom-input",
+  name = hotkey_name,
+  linked_game_control = "focus-search",
+  key_sequence = "Control + F"
+}
+
 data:extend
 {
   teleporter,
@@ -132,5 +140,6 @@ data:extend
   teleporter_explosion_2,
   recipe,
   technology,
-  teleporter_flying_text
+  teleporter_flying_text,
+  hotkey
 }

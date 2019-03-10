@@ -7,4 +7,9 @@ data.entities =
   teleporter = "teleporter"
 }
 
+data.hotkeys =
+{
+  focus_search = "teleporter-focus-search"
+}
+
 return data

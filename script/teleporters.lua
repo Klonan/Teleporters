@@ -9,8 +9,11 @@ local data =
   teleporter_frames = {},
   player_linked_teleporter = {},
   to_be_removed = {},
-  tag_map = {}
+  tag_map = {},
+  search_boxes = {}
 }
+
+local preview_size = 160
 
 local print = function(string)
   game.print(string)
@@ -102,17 +105,16 @@ local make_teleporter_gui = function(player, source)
   local frame = player.gui.center.add{type = "frame", direction = "vertical"}
   player.opened = frame
   data.teleporter_frames[player.index] = frame
-
-
   local title_flow = frame.add{type = "flow", direction = "horizontal"}
   title_flow.style.vertical_align = "center"
   local title = title_flow.add{type = "label", style = "heading_1_label"}
-  local rename_button = title_flow.add{type = "sprite-button", sprite = "utility/rename_icon_small", style = "small_slot_button"}
+  local rename_button = title_flow.add{type = "sprite-button", sprite = "utility/rename_icon_small", style = "small_slot_button", visible = source.force == player.force}
   local pusher = title_flow.add{type = "flow", direction = "horizontal"}
   pusher.style.horizontally_stretchable = true
   local search_box = title_flow.add{type = "textfield", visible = false}
-  local search_button = title_flow.add{type = "sprite-button", style = "tool_button", sprite = "utility/search_icon"}
+  local search_button = title_flow.add{type = "sprite-button", style = "tool_button", sprite = "utility/search_icon", tooltip = {"gui.search-with-focus", {"search"}}}
   util.register_gui(data.button_actions, search_button, {type = "search_button", box = search_box})
+  data.search_boxes[player.index] = search_box
   local inner = frame.add{type = "frame", style = "inside_deep_frame"}
   local scroll = inner.add{type = "scroll-pane", direction = "vertical"}
   local table = scroll.add{type = "table", column_count = 4}
@@ -121,14 +123,19 @@ local make_teleporter_gui = function(player, source)
   table.style.vertical_spacing = 2
   local any = false
   --print(table_size(network))
+  local chart = player.force.chart
   for name, teleporter in pairs (network) do
-    if teleporter.teleporter == source then
+    local teleporter_entity = teleporter.teleporter
+    if teleporter_entity == source then
       title.caption = name
       util.register_gui(data.button_actions, rename_button, {type = "rename_button", caption = name})
     else
+      local position = teleporter_entity.position
+      local area = {{position.x - preview_size / 2, position.y - preview_size / 2}, {position.x + preview_size / 2, position.y + preview_size / 2}}
+      chart(teleporter_entity.surface, area)
       local button = table.add{type = "button", name = name}
-      button.style.height = 160 + 32
-      button.style.width = 160
+      button.style.height = preview_size + 32 + 8
+      button.style.width = preview_size + 8
       button.style.left_padding = 0
       button.style.right_padding = 0
       local inner_flow = button.add{type = "flow", direction = "vertical", ignored_by_interaction = true}
@@ -138,14 +145,14 @@ local make_teleporter_gui = function(player, source)
       local map = inner_flow.add
       {
         type = "minimap",
-        surface_index = teleporter.teleporter.surface.index,
+        surface_index = teleporter_entity.surface.index,
         zoom = 1,
-        force = teleporter.teleporter.force.name,
-        position = teleporter.teleporter.position,
+        force = teleporter_entity.force.name,
+        position = position,
       }
       map.ignored_by_interaction = true
-      map.style.height = 160 - 8
-      map.style.width = 160 - 8
+      map.style.height = preview_size
+      map.style.width = preview_size
       map.style.horizontally_stretchable = true
       map.style.vertically_stretchable = true
       local label = inner_flow.add{type = "label", caption = name}
@@ -153,7 +160,7 @@ local make_teleporter_gui = function(player, source)
       label.style.font = "default-dialog-button"
       label.style.font_color = {}
       label.style.horizontally_stretchable = true
-      label.style.maximal_width = 160 - 8
+      label.style.maximal_width = preview_size
       label.style.want_ellipsis = true
       util.register_gui(data.button_actions, button, {type = "teleport_button", param = teleporter})
       any = true
@@ -296,7 +303,7 @@ local gui_actions =
     local search = box.text
     local parent = param.parent
     for k, child in pairs (parent.children) do
-      child.visible = child.name:find(search)
+      child.visible = child.name:lower():find(search:lower())
     end
   end,
   search_button = function(event, param)
@@ -363,10 +370,11 @@ local teleporter_triggered = function(entity)
     force = force,
     create_build_effect_smoke = false
   }
+  new_teleporter.health = entity.health
   param.teleporter = new_teleporter
   data.teleporter_map[new_teleporter.unit_number] = param
   data.teleporter_map[entity.unit_number] = nil
-  local character = surface.find_entities_filtered{type = "player", area = {{position.x - 2, position.y - 2}, {position.x + 2, position.y + 2}}, force = force}[1]
+  local character = surface.find_entities_filtered{type = "player", area = {{position.x - 2, position.y - 2}, {position.x + 2, position.y + 2}}}[1]
   if not character then return end
   local player = character.player
   if not player then return end
@@ -504,6 +512,28 @@ local on_chart_tag_added = function(event)
   end
 end
 
+local toggle_search = function(player)
+  local box = data.search_boxes[player.index]
+  if not (box and box.valid) then return end
+  box.visible = true
+  box.focus()
+end
+
+local on_search_focused = function(event)
+  local player = game.get_player(event.player_index)
+  toggle_search(player)
+end
+
+local on_player_display_resolution_changed = function(event)
+  local player = game.get_player(event.player_index)
+  check_player_linked_teleporter(player)
+end
+
+local on_player_display_scale_changed = function(event)
+  local player = game.get_player(event.player_index)
+  check_player_linked_teleporter(player)
+end
+
 local events =
 {
   [defines.events.on_built_entity] = on_built_entity,
@@ -520,6 +550,9 @@ local events =
   [defines.events.on_chart_tag_modified] = on_chart_tag_modified,
   [defines.events.on_chart_tag_removed] = on_chart_tag_removed,
   [defines.events.on_chart_tag_added] = on_chart_tag_added,
+  [defines.events.on_player_display_resolution_changed] = on_player_display_resolution_changed,
+  [defines.events.on_player_display_scale_changed] = on_player_display_scale_changed,
+  [require("shared").hotkeys.focus_search] = on_search_focused
 }
 
 local teleporters = {}
@@ -548,6 +581,9 @@ teleporters.on_configuration_changed = function()
   data.teleporter_map = data.teleporter_map or data.map or {}
   data.tag_map = data.tag_map or {}
   resync_all_teleporters()
+
+  --0.1.7...
+  data.search_boxes = data.search_boxes or {}
 end
 
 return teleporters
