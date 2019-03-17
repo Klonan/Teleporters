@@ -90,6 +90,18 @@ local unlink_teleporter = function(player)
   data.player_linked_teleporter[player.index] = nil
 end
 
+local clear_teleporter_data = function(teleporter_data)
+  local flying_text = teleporter_data.flying_text
+  if flying_text and flying_text.valid then
+    flying_text.destroy()
+  end
+  local map_tag = teleporter_data.tag
+  if map_tag and map_tag.valid then
+    data.tag_map[map_tag.tag_number] = nil
+    map_tag.destroy()
+  end
+end
+
 local make_teleporter_gui = function(player, source)
 
   if not (source and source.valid and not data.to_be_removed[source.unit_number]) then
@@ -126,7 +138,9 @@ local make_teleporter_gui = function(player, source)
   local chart = player.force.chart
   for name, teleporter in pairs (network) do
     local teleporter_entity = teleporter.teleporter
-    if teleporter_entity == source then
+    if not (teleporter_entity.valid) then
+      clear_teleporter_data(teleporter)
+    elseif teleporter_entity == source then
       title.caption = name
       util.register_gui(data.button_actions, rename_button, {type = "rename_button", caption = name})
     else
@@ -188,18 +202,6 @@ local check_player_linked_teleporter = function(player)
     make_teleporter_gui(player, source)
   else
     unlink_teleporter(player)
-  end
-end
-
-local clear_teleporter_data = function(teleporter_data)
-  local flying_text = teleporter_data.flying_text
-  if flying_text and flying_text.valid then
-    flying_text.destroy()
-  end
-  local map_tag = teleporter_data.tag
-  if map_tag and map_tag.valid then
-    data.tag_map[map_tag.tag_number] = nil
-    map_tag.destroy()
   end
 end
 
