@@ -1,4 +1,6 @@
-local teleporter_name = require("shared").entities.teleporter
+local names = require("shared")
+local teleporter_name = names.entities.teleporter
+local teleporter_sticker = names.entities.teleporter_sticker
 
 local data =
 {
@@ -289,7 +291,7 @@ local gui_actions =
     if not teleport_param then return end
     local destination = teleport_param.teleporter
     if not (destination and destination.valid) then return end
-    destination.timeout = 300
+    destination.timeout = destination.prototype.timeout
     local destination_surface = destination.surface
     local destination_position = destination.position
     local player = game.players[event.player_index]
@@ -357,45 +359,26 @@ local on_teleporter_removed = function(entity)
   data.to_be_removed[entity.unit_number] = nil
 end
 
-local teleporter_triggered = function(entity)
-  --print("Triggered "..game.tick)
-  --print(serpent.block(data.teleporter_frames))
-  if not (entity and entity.valid and entity.name == teleporter_name) then return end
+local teleporter_triggered = function(entity, character)
+  if not (entity and entity.valid and entity.name == teleporter_name) then return error("HEOK") end
+  if character.type ~= "character" then return end
   local force = entity.force
   local surface = entity.surface
   local position = entity.position
   local param = data.teleporter_map[entity.unit_number]
-  local new_teleporter = surface.create_entity
-  {
-    name = teleporter_name,
-    position = position,
-    force = force,
-    create_build_effect_smoke = false
-  }
-  new_teleporter.health = entity.health
-  param.teleporter = new_teleporter
-  data.teleporter_map[new_teleporter.unit_number] = param
-  data.teleporter_map[entity.unit_number] = nil
-  local character = surface.find_entities_filtered{type = "player", area = {{position.x - 2, position.y - 2}, {position.x + 2, position.y + 2}}}[1]
-  if not character then return end
   local player = character.player
   if not player then return end
   player.teleport(entity.position)
-  new_teleporter.active = false
+  entity.active = false
+  entity.timeout = entity.prototype.timeout
   character.active = false
-  data.player_linked_teleporter[player.index] = new_teleporter
+  data.player_linked_teleporter[player.index] = entity
   local gui = player.gui.center
   clear_gui(gui)
-  entity.destroy()
-  make_teleporter_gui(player, new_teleporter)
+  make_teleporter_gui(player, entity)
 end
 
 local on_entity_died = function(event)
-  local cause = event.cause
-  local entity = event.entity
-  if cause and cause.valid and entity and entity.valid and entity.name == teleporter_name and cause == entity then
-    return teleporter_triggered(entity)
-  end
   on_teleporter_removed(event.entity)
 end
 
@@ -536,6 +519,17 @@ local on_player_display_scale_changed = function(event)
   check_player_linked_teleporter(player)
 end
 
+local on_trigger_created_entity = function(event)
+  local entity = event.entity
+  if not (entity and entity.valid) then return end
+  if entity.name ~= teleporter_sticker then return end
+  local source = event.source
+  if not (source and source.valid) then return end
+  local stuck_to = entity.sticked_to
+  if not (stuck_to and stuck_to.valid) then return end
+  teleporter_triggered(source, stuck_to)
+end
+
 local events =
 {
   [defines.events.on_built_entity] = on_built_entity,
@@ -554,7 +548,9 @@ local events =
   [defines.events.on_chart_tag_added] = on_chart_tag_added,
   [defines.events.on_player_display_resolution_changed] = on_player_display_resolution_changed,
   [defines.events.on_player_display_scale_changed] = on_player_display_scale_changed,
-  [require("shared").hotkeys.focus_search] = on_search_focused
+  [require("shared").hotkeys.focus_search] = on_search_focused,
+  [defines.events.on_trigger_created_entity] = on_trigger_created_entity,
+
 }
 
 local teleporters = {}

@@ -1,6 +1,7 @@
 local path = util.path("data/entities/teleporters/")
 local teleporter = util.copy(data.raw["land-mine"]["land-mine"])
-local name = require"shared".entities.teleporter
+local names = require("shared")
+local name = names.entities.teleporter
 local localised_name = {name}
 
 teleporter.name = name
@@ -10,8 +11,23 @@ teleporter.timeout = 5 * 60
 teleporter.max_health = 200
 --teleporter.shooting_cursor_size = 0
 teleporter.dying_explosion = nil
-teleporter.action = nil
-teleporter.force_die_on_attack = true
+teleporter.action =
+{
+  type = "direct",
+  action_delivery =
+  {
+    type = "instant",
+    target_effects =
+    {
+      {
+        type = "create-sticker",
+        sticker = names.entities.teleporter_sticker,
+        trigger_created_entity = true
+      }
+    }
+  }
+}
+teleporter.force_die_on_attack = false
 teleporter.trigger_force = "all"
 --teleporter.create_ghost_on_death = false
 teleporter.order = name
@@ -51,6 +67,19 @@ teleporter.flags =
 teleporter.collision_box = {{-1, -1},{1, 1}}
 teleporter.selection_box = {{-1, -1},{1, 1}}
 teleporter.map_color = {r = 0.5, g = 1, b = 1}
+
+
+local sticker =
+{
+  type = "sticker",
+  name = names.entities.teleporter_sticker,
+  --icon = "__base__/graphics/icons/slowdown-sticker.png",
+  flags = {},
+  animation = util.empty_sprite(),
+  duration_in_ticks = 1,
+  --target_movement_modifier = 1
+}
+
 
 local teleporter_item = util.copy(data.raw.item["land-mine"])
 teleporter_item.name = name
@@ -141,5 +170,6 @@ data:extend
   recipe,
   technology,
   teleporter_flying_text,
-  hotkey
+  hotkey,
+  sticker
 }

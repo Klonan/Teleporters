@@ -1,0 +1,7 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.1.9
+Date: 2019-05
+  Changes:
+    - Added changelog.
+    - Fix compatibility with Factorio version 0.17.35+.
+    - Slight optimization of teleporter triggering logic.

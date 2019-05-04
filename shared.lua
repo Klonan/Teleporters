@@ -4,7 +4,8 @@ local data = {}
 
 data.entities =
 {
-  teleporter = "teleporter"
+  teleporter = "teleporter",
+  teleporter_sticker = "teleporter-sticker"
 }
 
 data.hotkeys =
