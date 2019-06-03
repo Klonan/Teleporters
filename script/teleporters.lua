@@ -307,7 +307,7 @@ local gui_actions =
     local search = box.text
     local parent = param.parent
     for k, child in pairs (parent.children) do
-      child.visible = child.name:lower():find(search:lower())
+      child.visible = child.name:lower():find(search:lower(), 1, true)
     end
   end,
   search_button = function(event, param)
