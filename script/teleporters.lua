@@ -104,6 +104,12 @@ local clear_teleporter_data = function(teleporter_data)
   end
 end
 
+
+local get_sort_function = function()
+  return
+  function(t, a, b) return a < b end
+end
+
 local make_teleporter_gui = function(player, source)
 
   if not (source and source.valid and not data.to_be_removed[source.unit_number]) then
@@ -138,7 +144,7 @@ local make_teleporter_gui = function(player, source)
   local any = false
   --print(table_size(network))
   local chart = player.force.chart
-  for name, teleporter in pairs (network) do
+  for name, teleporter in spairs (network, get_sort_function()) do
     local teleporter_entity = teleporter.teleporter
     if not (teleporter_entity.valid) then
       clear_teleporter_data(teleporter)
@@ -177,13 +183,35 @@ local make_teleporter_gui = function(player, source)
       label.style.font_color = {}
       label.style.horizontally_stretchable = true
       label.style.maximal_width = preview_size
-      label.style.want_ellipsis = true
       util.register_gui(data.button_actions, button, {type = "teleport_button", param = teleporter})
       any = true
     end
   end
   if not any then
     table.add{type = "label", caption = {"no-teleporters"}}
+  end
+end
+
+function spairs(t, order)
+  -- collect the keys
+  local keys = {}
+  for k in pairs(t) do keys[#keys+1] = k end
+
+  -- if order function given, sort by it by passing the table and keys a, b,
+  -- otherwise just sort the keys
+  if order then
+      table.sort(keys, function(a,b) return order(t, a, b) end)
+  else
+      table.sort(keys)
+  end
+
+  -- return the iterator function
+  local i = 0
+  return function()
+      i = i + 1
+      if keys[i] then
+          return keys[i], t[keys[i]]
+      end
   end
 end
 

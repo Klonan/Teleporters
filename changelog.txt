@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.1.11
+Date: 2019-07
+  Changes:
+    - Fixed script error due to removed 'want_elipsis' LuaStyle.
+    - The teleporter list GUI is now sorted alphabetically.
+---------------------------------------------------------------------------------------------------
 Version: 0.1.10
 Date: 2019-06
   Changes:
