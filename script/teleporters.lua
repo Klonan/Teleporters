@@ -17,7 +17,9 @@ local data =
 
 local preview_size = 160
 
+local debug_print = false
 local print = function(string)
+  if not debug_print then return end
   game.print(string)
   log(string)
 end
@@ -54,23 +56,34 @@ local get_teleporter_frame = function(player)
 end
 
 local make_rename_frame = function(player, caption)
+
+  local teleporter_frame = get_teleporter_frame(player)
+  if teleporter_frame then
+    teleporter_frame.ignored_by_interaction = true
+  end
+
+  player.opened = nil
+
   local force = player.force
   local teleporters = data.networks[force.name]
   local param = teleporters[caption]
   local text = param.flying_text
-  local gui = player.gui.center
-  clear_gui(gui)
-  local frame = gui.add{type = "frame", caption = {"name-teleporter"}, direction = "horizontal"}
-  data.rename_frames[player.index] = frame
+  local gui = player.gui.screen
+  local frame = gui.add{type = "frame", caption = {"gui-train-rename.title", caption}, direction = "horizontal"}
+  frame.auto_center = true
   player.opened = frame
+  data.rename_frames[player.index] = frame
+
+
 
   local textfield = frame.add{type = "textfield", text = caption}
   textfield.style.horizontally_stretchable = true
-  local confirm = frame.add{type = "sprite-button", sprite = "utility/confirm_slot", style = "slot_button"}
-  util.register_gui(data.button_actions, confirm, {type = "confirm_rename_button", textfield = textfield, flying_text = text, tag = param.tag})
+  textfield.focus()
+  textfield.select_all()
+  util.register_gui(data.button_actions, textfield, {type = "confirm_rename_textfield", textfield = textfield, flying_text = text, tag = param.tag})
 
-  local cancel = frame.add{type = "sprite-button", sprite = "utility/set_bar_slot", style = "slot_button"}
-  util.register_gui(data.button_actions, cancel, {type = "cancel_rename"})
+  local confirm = frame.add{type = "sprite-button", sprite = "utility/enter", style = "slot_button", tooltip = {"gui-train-rename.perform-change"}}
+  util.register_gui(data.button_actions, confirm, {type = "confirm_rename_button", textfield = textfield, flying_text = text, tag = param.tag})
 
 end
 
@@ -112,25 +125,47 @@ end
 
 local make_teleporter_gui = function(player, source)
 
+  local location
+  local teleporter_frame = get_teleporter_frame(player)
+  if teleporter_frame then
+    location = teleporter_frame.location
+    data.teleporter_frames[player.index] = nil
+    print("Frame already exists")
+    close_gui(teleporter_frame)
+    player.opened = nil
+  end
+
+  print("Making new frame")
+
   if not (source and source.valid and not data.to_be_removed[source.unit_number]) then
     unlink_teleporter(player)
     return
   end
+
   local force = source.force
   local network = data.networks[force.name]
   if not network then return end
 
-  local gui = player.gui.center
-  clear_gui(gui)
-  local frame = player.gui.center.add{type = "frame", direction = "vertical"}
+  local gui = player.gui.screen
+  local frame = gui.add{type = "frame", direction = "vertical", ignored_by_interaction = false}
+  if location then
+    frame.location = location
+  else
+    frame.auto_center = true
+  end
+
   player.opened = frame
   data.teleporter_frames[player.index] = frame
+  frame.ignored_by_interaction = false
   local title_flow = frame.add{type = "flow", direction = "horizontal"}
   title_flow.style.vertical_align = "center"
   local title = title_flow.add{type = "label", style = "heading_1_label"}
+  title.drag_target = frame
   local rename_button = title_flow.add{type = "sprite-button", sprite = "utility/rename_icon_small", style = "small_slot_button", visible = source.force == player.force}
-  local pusher = title_flow.add{type = "flow", direction = "horizontal"}
+  local pusher = title_flow.add{type = "empty-widget", direction = "horizontal", style = "draggable_space_header"}
   pusher.style.horizontally_stretchable = true
+  pusher.style.vertically_stretchable = true
+  pusher.drag_target = frame
   local search_box = title_flow.add{type = "textfield", visible = false}
   local search_button = title_flow.add{type = "sprite-button", style = "tool_button", sprite = "utility/search_icon", tooltip = {"gui.search-with-focus", {"search"}}}
   util.register_gui(data.button_actions, search_button, {type = "search_button", box = search_box})
@@ -219,18 +254,22 @@ local refresh_teleporter_frames = function()
   local players = game.players
   for player_index, source in pairs (data.player_linked_teleporter) do
     local player = players[player_index]
-    if get_teleporter_frame(player) then
+    local frame = get_teleporter_frame(player)
+    if frame then
+      print("Refreshing frame")
       make_teleporter_gui(player, source)
     end
   end
 end
 
 local check_player_linked_teleporter = function(player)
+  print("Checking player linked teleporter")
   local source = data.player_linked_teleporter[player.index]
   if source and source.valid then
-    --print("Linked teleporter exists...")
+    print("Linked teleporter exists...")
     make_teleporter_gui(player, source)
   else
+    print("Unlinnkgin")
     unlink_teleporter(player)
   end
 end
@@ -279,6 +318,10 @@ local is_name_available = function(force, name)
 end
 
 local rename_teleporter = function(force, old_name, new_name)
+  if old_name == new_name then
+    refresh_teleporter_frames()
+    return
+  end
   local network = data.networks[force.name]
   local teleporter_data = network[old_name]
   network[new_name] = teleporter_data
@@ -295,24 +338,49 @@ local gui_actions =
   cancel_rename = function(event, param)
     local player = game.get_player(event.player_index)
     close_gui(get_rename_frame(player))
+
+    print("On cancel rename linked check")
     check_player_linked_teleporter(player)
   end,
   confirm_rename_button = function(event, param)
+    if event.name ~= defines.events.on_gui_click then return end
     local flying_text = param.flying_text
     if not (flying_text and flying_text.valid) then return end
     local player = game.players[event.player_index]
     if not (player and player.valid) then return end
     local old_name = flying_text.text
     local new_name = param.textfield.text
-    if new_name ~= old_name then
-      if not is_name_available(player.force, new_name) then
-        player.print({"name-already-taken"})
-        return
-      end
-      rename_teleporter(player.force, old_name, new_name)
+
+    if new_name ~= old_name and not is_name_available(player.force, new_name) then
+      player.print({"name-already-taken"})
+      return
     end
+
     close_gui(get_rename_frame(player))
-    check_player_linked_teleporter(player)
+    rename_teleporter(player.force, old_name, new_name)
+
+    print("On rename linked check")
+    --check_player_linked_teleporter(player)
+  end,
+  confirm_rename_textfield = function(event, param)
+    if event.name ~= defines.events.on_gui_confirmed then return end
+    local flying_text = param.flying_text
+    if not (flying_text and flying_text.valid) then return end
+    local player = game.players[event.player_index]
+    if not (player and player.valid) then return end
+    local old_name = flying_text.text
+    local new_name = param.textfield.text
+
+    if new_name ~= old_name and not is_name_available(player.force, new_name) then
+      player.print({"name-already-taken"})
+      return
+    end
+
+    close_gui(get_rename_frame(player))
+    rename_teleporter(player.force, old_name, new_name)
+
+    print("On rename linked check")
+    --check_player_linked_teleporter(player)
   end,
   teleport_button = function(event, param)
     local teleport_param = param.param
@@ -401,8 +469,6 @@ local teleporter_triggered = function(entity, character)
   entity.timeout = entity.prototype.timeout
   character.active = false
   data.player_linked_teleporter[player.index] = entity
-  local gui = player.gui.center
-  clear_gui(gui)
   make_teleporter_gui(player, entity)
 end
 
@@ -430,22 +496,27 @@ local on_gui_action = function(event)
   end
 end
 
+
 local on_gui_closed = function(event)
   --print("CLOSED "..event.tick)
+  local element = event.element
+  if not element then return end
 
   local player = game.get_player(event.player_index)
 
   local rename_frame = get_rename_frame(player)
-  if rename_frame then
+  if rename_frame and rename_frame == element then
     close_gui(rename_frame)
+    print("Closed rename frame, checking player linked")
     check_player_linked_teleporter(player)
     return
   end
 
   local teleporter_frame = get_teleporter_frame(player)
-  if teleporter_frame then
+  if teleporter_frame and teleporter_frame == element and not teleporter_frame.ignored_by_interaction then
     close_gui(teleporter_frame)
     unlink_teleporter(player)
+    print("Frame unlinked")
     return
   end
 
@@ -564,6 +635,7 @@ local events =
   [defines.events.on_robot_built_entity] = on_built_entity,
   [defines.events.on_gui_click] = on_gui_action,
   [defines.events.on_gui_text_changed] = on_gui_action,
+  [defines.events.on_gui_confirmed] = on_gui_action,
   [defines.events.on_entity_died] = on_entity_died,
   [defines.events.on_player_mined_entity] = on_player_mined_entity,
   [defines.events.on_robot_mined_entity] = on_robot_mined_entity,
