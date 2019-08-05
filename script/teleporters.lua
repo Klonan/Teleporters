@@ -172,6 +172,7 @@ local make_teleporter_gui = function(player, source)
   data.search_boxes[player.index] = search_box
   local inner = frame.add{type = "frame", style = "inside_deep_frame"}
   local scroll = inner.add{type = "scroll-pane", direction = "vertical"}
+  scroll.style.maximal_height = player.display_resolution.height * 0.8
   local table = scroll.add{type = "table", column_count = 4}
   util.register_gui(data.button_actions, search_box, {type = "search_text_changed", parent = table})
   table.style.horizontal_spacing = 2
