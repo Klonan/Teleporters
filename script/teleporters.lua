@@ -190,7 +190,7 @@ local make_teleporter_gui = function(player, source)
       local position = teleporter_entity.position
       local area = {{position.x - preview_size / 2, position.y - preview_size / 2}, {position.x + preview_size / 2, position.y + preview_size / 2}}
       chart(teleporter_entity.surface, area)
-      local button = table.add{type = "button", name = name}
+      local button = table.add{type = "button", name = "_"..name}
       button.style.height = preview_size + 32 + 8
       button.style.width = preview_size + 8
       button.style.left_padding = 0
