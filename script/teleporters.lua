@@ -433,9 +433,6 @@ local on_built_entity = function(event)
   data.teleporter_map[entity.unit_number] = teleporter_data
   resync_teleporter(name, teleporter_data)
   refresh_teleporter_frames()
-  if event.player_index then
-    make_rename_frame(game.get_player(event.player_index), name)
-  end
 end
 
 local on_teleporter_removed = function(entity)

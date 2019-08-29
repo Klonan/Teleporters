@@ -3,6 +3,7 @@ Version: 0.1.14
 Date: 2019-07
   Changes:
     - Fixed script error naming teleporters 'help' or 'valid' etc.
+    - Rename teleporter GUI will no longer show when building a new teleporter.
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.11
 Date: 2019-07
