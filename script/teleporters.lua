@@ -1,3 +1,4 @@
+local util = require("script/script_util")
 local names = require("shared")
 local teleporter_name = names.entities.teleporter
 local teleporter_sticker = names.entities.teleporter_sticker
@@ -422,7 +423,7 @@ local get_network = function(force)
 end
 
 local on_built_entity = function(event)
-  local entity = event.created_entity
+  local entity = event.created_entity or event.entity or event.destination
   if not (entity and entity.valid) then return end
   if entity.name ~= teleporter_name then return end
   local surface = entity.surface
@@ -469,6 +470,13 @@ local teleporter_triggered = function(entity, character)
   data.player_linked_teleporter[player.index] = entity
   make_teleporter_gui(player, entity)
 end
+
+local on_entity_removed = function(event)
+  local entity = event.entity
+  if not (entity and entity.valid) then return end
+  on_teleporter_removed(entity)
+end
+
 
 local on_entity_died = function(event)
   on_teleporter_removed(event.entity)
@@ -627,44 +635,97 @@ local on_trigger_created_entity = function(event)
   teleporter_triggered(source, stuck_to)
 end
 
-local events =
-{
-  [defines.events.on_built_entity] = on_built_entity,
-  [defines.events.on_robot_built_entity] = on_built_entity,
-  [defines.events.on_gui_click] = on_gui_action,
-  [defines.events.on_gui_text_changed] = on_gui_action,
-  [defines.events.on_gui_confirmed] = on_gui_action,
-  [defines.events.on_entity_died] = on_entity_died,
-  [defines.events.on_player_mined_entity] = on_player_mined_entity,
-  [defines.events.on_robot_mined_entity] = on_robot_mined_entity,
-  [defines.events.on_gui_closed] = on_gui_closed,
-  [defines.events.on_player_died] = on_player_removed,
-  [defines.events.on_player_left_game] = on_player_removed,
-  [defines.events.on_player_changed_force] = on_player_removed,
-  [defines.events.on_chart_tag_modified] = on_chart_tag_modified,
-  [defines.events.on_chart_tag_removed] = on_chart_tag_removed,
-  [defines.events.on_chart_tag_added] = on_chart_tag_added,
-  [defines.events.on_player_display_resolution_changed] = on_player_display_resolution_changed,
-  [defines.events.on_player_display_scale_changed] = on_player_display_scale_changed,
-  [require("shared").hotkeys.focus_search] = on_search_focused,
-  [defines.events.on_trigger_created_entity] = on_trigger_created_entity,
 
-}
+
+
+local on_rocket_launched = function(event)
+  local rocket = event.rocket
+  if not (rocket and rocket.valid) then return end
+
+  local count = rocket.get_item_count(teleporter_name)
+  if count == 0 then return end
+
+  local rand = math.random
+  local rando = function(i)
+    return rand() * (i or 5)
+  end
+
+  local rando_autoplace = function(i)
+    return
+    {
+      frequency = rando(i),
+      richness = rando(i),
+      size = rando(i)
+    }
+  end
+
+  local settings = rocket.surface.map_gen_settings
+
+  for name, autoplace in pairs(settings.autoplace_controls) do
+    settings.autoplace_controls[name] = rando_autoplace(rando(2))
+  end
+
+  settings.cliff_settings =
+  {
+    cliff_elevation_0 = rando(20),
+    cliff_elevation_interval = rando(80),
+    name = "cliff",
+    richness = 1
+  }
+
+  settings.seed = math.floor(rando(2 ^ 32))
+  settings.terrain_segmentation = rando(3)
+  settings.water = rando(3)
+  settings.starting_area = rando(3)
+
+  local new_surface = game.create_surface("teleporter_surface"..game.tick..settings.seed, settings)
+
+  new_surface.create_entity{name = teleporter_name, position = {0, 0}, force = rocket.force, raise_built = true}
+
+end
 
 local teleporters = {}
 
+teleporters.events =
+{
+  [defines.events.on_built_entity] = on_built_entity,
+  [defines.events.on_robot_built_entity] = on_built_entity,
+  [defines.events.script_raised_built] = on_built_entity,
+  [defines.events.script_raised_revive] = on_built_entity,
+  [defines.events.on_entity_cloned] = on_built_entity,
+
+  [defines.events.on_entity_died] = on_entity_removed,
+  [defines.events.on_player_mined_entity] = on_entity_removed,
+  [defines.events.on_robot_mined_entity] = on_entity_removed,
+  [defines.events.script_raised_destroy] = on_entity_removed,
+
+  [defines.events.on_gui_click] = on_gui_action,
+  [defines.events.on_gui_text_changed] = on_gui_action,
+  [defines.events.on_gui_confirmed] = on_gui_action,
+  [defines.events.on_gui_closed] = on_gui_closed,
+  [require("shared").hotkeys.focus_search] = on_search_focused,
+  [defines.events.on_player_display_resolution_changed] = on_player_display_resolution_changed,
+  [defines.events.on_player_display_scale_changed] = on_player_display_scale_changed,
+
+  [defines.events.on_player_died] = on_player_removed,
+  [defines.events.on_player_left_game] = on_player_removed,
+  [defines.events.on_player_changed_force] = on_player_removed,
+
+  [defines.events.on_chart_tag_modified] = on_chart_tag_modified,
+  [defines.events.on_chart_tag_removed] = on_chart_tag_removed,
+  [defines.events.on_chart_tag_added] = on_chart_tag_added,
+
+  [defines.events.on_trigger_created_entity] = on_trigger_created_entity,
+  [defines.events.on_rocket_launched] = on_rocket_launched
+
+}
+
 teleporters.on_init = function()
   global.teleporters = global.teleporters or data
-  teleporters.on_event = handler(events)
 end
 
 teleporters.on_load = function()
   data = global.teleporters
-  teleporters.on_event = handler(events)
-end
-
-teleporters.get_events = function()
-  return events
 end
 
 teleporters.on_configuration_changed = function()
