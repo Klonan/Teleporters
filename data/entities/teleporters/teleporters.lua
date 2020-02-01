@@ -87,6 +87,7 @@ teleporter_item.localised_name = localised_name
 teleporter_item.place_result = name
 teleporter_item.icon = path.."teleporter-icon.png"
 teleporter_item.icon_size = 97
+teleporter_item.icon_mipmaps = 0
 teleporter_item.subgroup = "circuit-network"
 
 
