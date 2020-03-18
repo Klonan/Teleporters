@@ -162,7 +162,7 @@ local make_teleporter_gui = function(player, source)
   title_flow.style.vertical_align = "center"
   local title = title_flow.add{type = "label", style = "heading_1_label"}
   title.drag_target = frame
-  local rename_button = title_flow.add{type = "sprite-button", sprite = "utility/rename_icon_small", style = "small_slot_button", visible = source.force == player.force}
+  local rename_button = title_flow.add{type = "sprite-button", sprite = "utility/rename_icon_small", style = "small_picture_slot_button", visible = source.force == player.force}
   local pusher = title_flow.add{type = "empty-widget", direction = "horizontal", style = "draggable_space_header"}
   pusher.style.horizontally_stretchable = true
   pusher.style.vertically_stretchable = true
