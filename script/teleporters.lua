@@ -83,7 +83,7 @@ local make_rename_frame = function(player, caption)
   textfield.select_all()
   util.register_gui(data.button_actions, textfield, {type = "confirm_rename_textfield", textfield = textfield, flying_text = text, tag = param.tag})
 
-  local confirm = frame.add{type = "sprite-button", sprite = "utility/enter", style = "slot_button", tooltip = {"gui-train-rename.perform-change"}}
+  local confirm = frame.add{type = "sprite-button", sprite = "utility/enter", style = "tool_button", tooltip = {"gui-train-rename.perform-change"}}
   util.register_gui(data.button_actions, confirm, {type = "confirm_rename_button", textfield = textfield, flying_text = text, tag = param.tag})
 
 end
@@ -162,7 +162,7 @@ local make_teleporter_gui = function(player, source)
   title_flow.style.vertical_align = "center"
   local title = title_flow.add{type = "label", style = "heading_1_label"}
   title.drag_target = frame
-  local rename_button = title_flow.add{type = "sprite-button", sprite = "utility/rename_icon_small", style = "small_picture_slot_button", visible = source.force == player.force}
+  local rename_button = title_flow.add{type = "sprite-button", sprite = "utility/rename_icon_small_white", style = "frame_action_button", visible = source.force == player.force}
   local pusher = title_flow.add{type = "empty-widget", direction = "horizontal", style = "draggable_space_header"}
   pusher.style.horizontally_stretchable = true
   pusher.style.vertically_stretchable = true
