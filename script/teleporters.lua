@@ -168,7 +168,7 @@ local make_teleporter_gui = function(player, source)
   pusher.style.vertically_stretchable = true
   pusher.drag_target = frame
   local search_box = title_flow.add{type = "textfield", visible = false}
-  local search_button = title_flow.add{type = "sprite-button", style = "tool_button", sprite = "utility/search_icon", tooltip = {"gui.search-with-focus", {"search"}}}
+  local search_button = title_flow.add{type = "sprite-button", style = "frame_action_button", sprite = "utility/search_white", tooltip = {"gui.search-with-focus", {"search"}}}
   util.register_gui(data.button_actions, search_button, {type = "search_button", box = search_box})
   data.search_boxes[player.index] = search_box
   local inner = frame.add{type = "frame", style = "inside_deep_frame"}
