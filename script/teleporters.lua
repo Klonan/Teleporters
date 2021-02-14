@@ -13,7 +13,8 @@ local data =
   player_linked_teleporter = {},
   to_be_removed = {},
   tag_map = {},
-  search_boxes = {}
+  search_boxes = {},
+  recent = {}
 }
 
 local preview_size = 160
@@ -96,6 +97,26 @@ local get_force_color = function(force)
   return {r = 1, b = 1, g = 1}
 end
 
+local add_recent = function(player, teleporter)
+  local recent = data.recent[player.name]
+  if not recent then
+    recent = {}
+    data.recent[player.name] = recent
+  end
+  recent[teleporter.unit_number] = game.tick
+  if table_size(recent) >= 9 then
+    local min = math.huge
+    local index
+    for k, tick in pairs (recent) do
+      if tick < min then
+        min = tick
+        index = k
+      end
+    end
+    if index then recent[index] = nil end
+  end
+end
+
 local unlink_teleporter = function(player)
   if player.character then player.character.active = true end
   close_gui(get_teleporter_frame(player))
@@ -103,6 +124,7 @@ local unlink_teleporter = function(player)
   if source and source.valid then
     source.active = true
   end
+  add_recent(player, source)
   data.player_linked_teleporter[player.index] = nil
 end
 
@@ -174,14 +196,45 @@ local make_teleporter_gui = function(player, source)
   local inner = frame.add{type = "frame", style = "inside_deep_frame"}
   local scroll = inner.add{type = "scroll-pane", direction = "vertical"}
   scroll.style.maximal_height = player.display_resolution.height * 0.8
-  local table = scroll.add{type = "table", column_count = 4}
-  util.register_gui(data.button_actions, search_box, {type = "search_text_changed", parent = table})
-  table.style.horizontal_spacing = 2
-  table.style.vertical_spacing = 2
+  local holding_table = scroll.add{type = "table", column_count = 4}
+  util.register_gui(data.button_actions, search_box, {type = "search_text_changed", parent = holding_table})
+  holding_table.style.horizontal_spacing = 2
+  holding_table.style.vertical_spacing = 2
   local any = false
   --print(table_size(network))
+
+  local recent = data.recent[player.name] or {}
+
+  local sorted = {}
+  local i = 1
+  for name, teleporter in pairs (network) do
+    sorted[i] = {name = name, teleporter = teleporter, unit_number = teleporter.teleporter.unit_number}
+    i = i + 1
+  end
+
+  table.sort(sorted, function(a, b)
+    if recent[a.unit_number] and recent[b.unit_number] then  
+      return recent[a.unit_number] > recent[b.unit_number]
+    end
+
+    if recent[a.unit_number] then
+      return true
+    end
+
+    if recent[b.unit_number] then
+      return false
+    end
+
+    return a.name > b.name
+  end)
+
+  local sorted_network = {}
+  for k, sorted_data in pairs (sorted) do
+    sorted_network[sorted_data.name] = sorted_data.teleporter
+  end
+
   local chart = player.force.chart
-  for name, teleporter in spairs (network, get_sort_function()) do
+  for name, teleporter in pairs(sorted_network) do
     local teleporter_entity = teleporter.teleporter
     if not (teleporter_entity.valid) then
       clear_teleporter_data(teleporter)
@@ -192,7 +245,7 @@ local make_teleporter_gui = function(player, source)
       local position = teleporter_entity.position
       local area = {{position.x - preview_size / 2, position.y - preview_size / 2}, {position.x + preview_size / 2, position.y + preview_size / 2}}
       chart(teleporter_entity.surface, area)
-      local button = table.add{type = "button", name = "_"..name}
+      local button = holding_table.add{type = "button", name = "_"..name}
       button.style.height = preview_size + 32 + 8
       button.style.width = preview_size + 8
       button.style.left_padding = 0
@@ -214,7 +267,11 @@ local make_teleporter_gui = function(player, source)
       map.style.width = preview_size
       map.style.horizontally_stretchable = true
       map.style.vertically_stretchable = true
-      local label = inner_flow.add{type = "label", caption = name}
+      local caption = name
+      if recent[teleporter_entity.unit_number] then
+        caption = "[img=quantity-time] "..name
+      end
+      local label = inner_flow.add{type = "label", caption = caption}
       label.style.horizontally_stretchable = true
       label.style.font = "default-dialog-button"
       label.style.font_color = {}
@@ -225,7 +282,7 @@ local make_teleporter_gui = function(player, source)
     end
   end
   if not any then
-    table.add{type = "label", caption = {"no-teleporters"}}
+    holding_table.add{type = "label", caption = {"no-teleporters"}}
   end
 end
 
@@ -399,7 +456,9 @@ local gui_actions =
     --This teleport doesn't check collisions. If someone complains, make it check 'can_place' and if false find a positions etc....
     player.teleport(destination_position, destination_surface)
     unlink_teleporter(player)
+    add_recent(player, destination)
   end,
+
   search_text_changed = function(event, param)
     local box = event.element
     local search = box.text
@@ -741,6 +800,8 @@ teleporters.on_configuration_changed = function()
 
   --0.1.7...
   data.search_boxes = data.search_boxes or {}
+
+  data.recent = data.recent or {}
 end
 
 return teleporters

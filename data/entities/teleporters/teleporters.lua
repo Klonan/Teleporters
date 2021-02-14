@@ -99,7 +99,7 @@ teleporter_explosion.animations = fire.create_fire_pictures({tint = {b = 1, g = 
 teleporter_explosion.sound =
 {
   filename = path.."teleporter-explosion.ogg",
-  volume = 1
+  volume = 0.5
 }
 
 local teleporter_explosion_2 = util.copy(teleporter_explosion)
