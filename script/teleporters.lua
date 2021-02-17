@@ -214,7 +214,7 @@ local make_teleporter_gui = function(player, source)
   end
 
   table.sort(sorted, function(a, b)
-    if recent[a.unit_number] and recent[b.unit_number] then  
+    if recent[a.unit_number] and recent[b.unit_number] then
       return recent[a.unit_number] > recent[b.unit_number]
     end
 
@@ -226,7 +226,7 @@ local make_teleporter_gui = function(player, source)
       return false
     end
 
-    return a.name > b.name
+    return a.name:lower() < b.name:lower()
   end)
 
   local sorted_network = {}
