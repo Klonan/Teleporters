@@ -209,12 +209,16 @@ local make_teleporter_gui = function(player, source)
   local sorted = {}
   local i = 1
   for name, teleporter in pairs (network) do
-    sorted[i] = {name = name, teleporter = teleporter, unit_number = teleporter.teleporter.unit_number}
-    i = i + 1
+    if teleporter.teleporter.valid then
+      sorted[i] = {name = name, teleporter = teleporter, unit_number = teleporter.teleporter.unit_number}
+      i = i + 1
+    else
+      clear_teleporter_data(teleporter)
+    end
   end
 
   table.sort(sorted, function(a, b)
-    if recent[a.unit_number] and recent[b.unit_number] then
+    if recent[a.unit_number] and recent[b.unit_number] then  
       return recent[a.unit_number] > recent[b.unit_number]
     end
 
@@ -226,7 +230,7 @@ local make_teleporter_gui = function(player, source)
       return false
     end
 
-    return a.name:lower() < b.name:lower()
+    return a.name > b.name
   end)
 
   local sorted_network = {}
