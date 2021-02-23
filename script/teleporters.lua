@@ -230,7 +230,7 @@ local make_teleporter_gui = function(player, source)
       return false
     end
 
-    return a.name > b.name
+    return a.name:lower() < b.name:lower()
   end)
 
   local sorted_network = {}
