@@ -1,6 +1,6 @@
 ## Teleporters
 
-![](thumbnail.png)
+![](data/entities/teleporters/teleporter-technology.png)
 
 --------------------------------------
 
