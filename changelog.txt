@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.5
+Date: 2021-02-24
+  Changes:
+    - Refined graphics (entity, icon).
+    - New smoke animation.
+    - New mod icon.
+    - New technology icon.
+    - (changes by snouz)
+---------------------------------------------------------------------------------------------------
 Version: 1.0.4
 Date: 2021-02-23
   Changes:

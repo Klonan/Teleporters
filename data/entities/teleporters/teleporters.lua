@@ -35,25 +35,43 @@ teleporter.picture_safe =
 {
   filename = path.."teleporter-closed.png",
   priority = "medium",
-  width = 97,
-  height = 77,
-  scale = 0.75
+  width = 80,
+  height = 80,
+  hr_version = {
+    filename = path.."hr-teleporter-closed.png",
+    priority = "medium",
+    width = 160,
+    height = 160,
+    scale = 0.5,
+  }
 }
 teleporter.picture_set =
 {
   filename = path.."teleporter-open.png",
   priority = "medium",
-  width = 97,
-  height = 77,
-  scale = 0.75
+  width = 80,
+  height = 80,
+  hr_version = {
+    filename = path.."hr-teleporter-open.png",
+    priority = "medium",
+    width = 160,
+    height = 160,
+    scale = 0.5,
+  }
 }
 teleporter.picture_set_enemy =
 {
   filename = path.."teleporter-open.png",
   priority = "medium",
-  width = 97,
-  height = 77,
-  scale = 0.75
+  width = 80,
+  height = 80,
+  hr_version = {
+    filename = path.."hr-teleporter-open.png",
+    priority = "medium",
+    width = 160,
+    height = 160,
+    scale = 0.5,
+  }
 }
 teleporter.minable = {result = name, mining_time = 3}
 teleporter.flags =
@@ -86,7 +104,7 @@ teleporter_item.name = name
 teleporter_item.localised_name = localised_name
 teleporter_item.place_result = name
 teleporter_item.icon = path.."teleporter-icon.png"
-teleporter_item.icon_size = 97
+teleporter_item.icon_size = 64
 teleporter_item.icon_mipmaps = 0
 teleporter_item.subgroup = "circuit-network"
 
@@ -95,11 +113,11 @@ local fire = require("data/tf_util/tf_fire_util")
 
 local teleporter_explosion = util.copy(data.raw.explosion.explosion)
 teleporter_explosion.name = "teleporter-explosion"
-teleporter_explosion.animations = fire.create_fire_pictures({tint = {b = 1, g = 1}, shift = {0, 1}, scale = 2, animation_speed = 0.5})
+teleporter_explosion.animations = fire.create_fire_pictures({scale = 1, animation_speed = 0.3})
 teleporter_explosion.sound =
 {
   filename = path.."teleporter-explosion.ogg",
-  volume = 0.5
+  volume = 0.45
 }
 
 local teleporter_explosion_2 = util.copy(teleporter_explosion)
@@ -127,8 +145,8 @@ local technology =
   name = name,
   localised_name = localised_name,
   localised_description = "",
-  icon_size = teleporter_item.icon_size,
-  icon = teleporter_item.icon,
+  icon_size = 256,
+  icon = path.."teleporter-technology.png",
   effects =
   {
     {
