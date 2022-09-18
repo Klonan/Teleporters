@@ -177,7 +177,7 @@ local hotkey =
   type = "custom-input",
   name = hotkey_name,
   linked_game_control = "focus-search",
-  key_sequence = "Control + F"
+  key_sequence = "CONTROL + F"
 }
 
 data:extend
