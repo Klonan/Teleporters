@@ -218,7 +218,7 @@ local make_teleporter_gui = function(player, source)
   end
 
   table.sort(sorted, function(a, b)
-    if recent[a.unit_number] and recent[b.unit_number] then  
+    if recent[a.unit_number] and recent[b.unit_number] then
       return recent[a.unit_number] > recent[b.unit_number]
     end
 
@@ -780,9 +780,13 @@ teleporters.events =
   [defines.events.on_chart_tag_added] = on_chart_tag_added,
 
   [defines.events.on_trigger_created_entity] = on_trigger_created_entity,
-  [defines.events.on_rocket_launched] = on_rocket_launched
+  -- [defines.events.on_rocket_launched] = on_rocket_launched
 
 }
+
+if settings.startup["teleporters-rockets-generate-new-surfaces"].value then
+  teleporters.events[defines.events.on_rocket_launched] = on_rocket_launched
+end
 
 teleporters.on_init = function()
   global.teleporters = global.teleporters or data
