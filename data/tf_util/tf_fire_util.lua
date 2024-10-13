@@ -8,8 +8,8 @@ fire_util.create_fire_pictures = function(opts)
   local fire_animation_speed = opts.animation_speed or 0.5
   local fire_scale =  opts.scale or 1
   local fire_tint = opts.tint or {r=1,g=1,b=1,a=1}
-  local fire_flags = opts.flags or { "compressed" }
-  return 
+  local fire_flags = opts.flags or {}
+  return
   {
     {
       filename = path.."teleporter-explosion.png",

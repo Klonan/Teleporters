@@ -3,7 +3,7 @@ local names = require("shared")
 local teleporter_name = names.entities.teleporter
 local teleporter_sticker = names.entities.teleporter_sticker
 
-local data =
+local script_data =
 {
   networks = {},
   rename_frames = {},
@@ -35,26 +35,26 @@ end
 
 local clear_gui = function(frame)
   if not (frame and frame.valid) then return end
-  util.deregister_gui(frame, data.button_actions)
+  util.deregister_gui(frame, script_data.button_actions)
   frame.clear()
 end
 
 local close_gui = function(frame)
   if not (frame and frame.valid) then return end
-  util.deregister_gui(frame, data.button_actions)
+  util.deregister_gui(frame, script_data.button_actions)
   frame.destroy()
 end
 
 local get_rename_frame = function(player)
-  local frame = data.rename_frames[player.index]
+  local frame = script_data.rename_frames[player.index]
   if frame and frame.valid then return frame end
-  data.rename_frames[player.index] = nil
+  script_data.rename_frames[player.index] = nil
 end
 
 local get_teleporter_frame = function(player)
-  local frame = data.teleporter_frames[player.index]
+  local frame = script_data.teleporter_frames[player.index]
   if frame and frame.valid then return frame end
-  data.teleporter_frames[player.index] = nil
+  script_data.teleporter_frames[player.index] = nil
 end
 
 local make_rename_frame = function(player, caption)
@@ -67,25 +67,23 @@ local make_rename_frame = function(player, caption)
   player.opened = nil
 
   local force = player.force
-  local teleporters = data.networks[force.name]
+  local teleporters = script_data.networks[force.name]
   local param = teleporters[caption]
   local text = param.flying_text
   local gui = player.gui.screen
-  local frame = gui.add{type = "frame", caption = {"gui-train-rename.title", caption}, direction = "horizontal"}
+  local frame = gui.add{type = "frame", caption = {"rename-teleporter", caption}, direction = "horizontal"}
   frame.auto_center = true
   player.opened = frame
-  data.rename_frames[player.index] = frame
+  script_data.rename_frames[player.index] = frame
 
-
-
-  local textfield = frame.add{type = "textfield", text = caption}
+  local textfield = frame.add{type = "textfield", text = caption, icon_selector = true}
   textfield.style.horizontally_stretchable = true
   textfield.focus()
   textfield.select_all()
-  util.register_gui(data.button_actions, textfield, {type = "confirm_rename_textfield", textfield = textfield, flying_text = text, tag = param.tag})
+  util.register_gui(script_data.button_actions, textfield, {type = "confirm_rename_textfield", textfield = textfield, flying_text = text, tag = param.tag})
 
   local confirm = frame.add{type = "sprite-button", sprite = "utility/enter", style = "tool_button", tooltip = {"gui-train-rename.perform-change"}}
-  util.register_gui(data.button_actions, confirm, {type = "confirm_rename_button", textfield = textfield, flying_text = text, tag = param.tag})
+  util.register_gui(script_data.button_actions, confirm, {type = "confirm_rename_button", textfield = textfield, flying_text = text, tag = param.tag})
 
 end
 
@@ -98,10 +96,10 @@ local get_force_color = function(force)
 end
 
 local add_recent = function(player, teleporter)
-  local recent = data.recent[player.name]
+  local recent = script_data.recent[player.name]
   if not recent then
     recent = {}
-    data.recent[player.name] = recent
+    script_data.recent[player.name] = recent
   end
   recent[teleporter.unit_number] = game.tick
   if table_size(recent) >= 9 then
@@ -120,12 +118,12 @@ end
 local unlink_teleporter = function(player)
   if player.character then player.character.active = true end
   close_gui(get_teleporter_frame(player))
-  local source = data.player_linked_teleporter[player.index]
+  local source = script_data.player_linked_teleporter[player.index]
   if source and source.valid then
     source.active = true
     add_recent(player, source)
   end
-  data.player_linked_teleporter[player.index] = nil
+  script_data.player_linked_teleporter[player.index] = nil
 end
 
 local clear_teleporter_data = function(teleporter_data)
@@ -135,7 +133,7 @@ local clear_teleporter_data = function(teleporter_data)
   end
   local map_tag = teleporter_data.tag
   if map_tag and map_tag.valid then
-    data.tag_map[map_tag.tag_number] = nil
+    script_data.tag_map[map_tag.tag_number] = nil
     map_tag.destroy()
   end
 end
@@ -152,7 +150,7 @@ local make_teleporter_gui = function(player, source)
   local teleporter_frame = get_teleporter_frame(player)
   if teleporter_frame then
     location = teleporter_frame.location
-    data.teleporter_frames[player.index] = nil
+    script_data.teleporter_frames[player.index] = nil
     print("Frame already exists")
     close_gui(teleporter_frame)
     player.opened = nil
@@ -160,13 +158,13 @@ local make_teleporter_gui = function(player, source)
 
   print("Making new frame")
 
-  if not (source and source.valid and not data.to_be_removed[source.unit_number]) then
+  if not (source and source.valid and not script_data.to_be_removed[source.unit_number]) then
     unlink_teleporter(player)
     return
   end
 
   local force = source.force
-  local network = data.networks[force.name]
+  local network = script_data.networks[force.name]
   if not network then return end
 
   local gui = player.gui.screen
@@ -178,33 +176,33 @@ local make_teleporter_gui = function(player, source)
   end
 
   player.opened = frame
-  data.teleporter_frames[player.index] = frame
+  script_data.teleporter_frames[player.index] = frame
   frame.ignored_by_interaction = false
   local title_flow = frame.add{type = "flow", direction = "horizontal"}
   title_flow.style.vertical_align = "center"
-  local title = title_flow.add{type = "label", style = "heading_1_label"}
+  local title = title_flow.add{type = "label", style = "frame_title"}
   title.drag_target = frame
-  local rename_button = title_flow.add{type = "sprite-button", sprite = "utility/rename_icon_small_white", style = "frame_action_button", visible = source.force == player.force}
+  local rename_button = title_flow.add{type = "sprite-button", sprite = "utility/rename_icon", style = "mini_button_aligned_to_text_vertically_when_centered", visible = source.force == player.force}
   local pusher = title_flow.add{type = "empty-widget", direction = "horizontal", style = "draggable_space_header"}
   pusher.style.horizontally_stretchable = true
   pusher.style.vertically_stretchable = true
   pusher.drag_target = frame
   local search_box = title_flow.add{type = "textfield", visible = false}
-  local search_button = title_flow.add{type = "sprite-button", style = "frame_action_button", sprite = "utility/search_white", tooltip = {"gui.search-with-focus", {"search"}}}
-  util.register_gui(data.button_actions, search_button, {type = "search_button", box = search_box})
-  data.search_boxes[player.index] = search_box
+  local search_button = title_flow.add{type = "sprite-button", style = "frame_action_button", sprite = "utility/search", tooltip = {"gui.search-with-focus", {"search"}}}
+  util.register_gui(script_data.button_actions, search_button, {type = "search_button", box = search_box})
+  script_data.search_boxes[player.index] = search_box
   local inner = frame.add{type = "frame", style = "inside_deep_frame"}
   local scroll = inner.add{type = "scroll-pane", direction = "vertical"}
   scroll.style.maximal_height = (player.display_resolution.height / player.display_scale) * 0.8
   local column_count = ((player.display_resolution.width / player.display_scale) * 0.6) / preview_size
   local holding_table = scroll.add{type = "table", column_count = column_count}
-  util.register_gui(data.button_actions, search_box, {type = "search_text_changed", parent = holding_table})
+  util.register_gui(script_data.button_actions, search_box, {type = "search_text_changed", parent = holding_table})
   holding_table.style.horizontal_spacing = 2
   holding_table.style.vertical_spacing = 2
   local any = false
   --print(table_size(network))
 
-  local recent = data.recent[player.name] or {}
+  local recent = script_data.recent[player.name] or {}
 
   local sorted = {}
   local i = 1
@@ -218,7 +216,7 @@ local make_teleporter_gui = function(player, source)
   end
 
   table.sort(sorted, function(a, b)
-    if recent[a.unit_number] and recent[b.unit_number] then  
+    if recent[a.unit_number] and recent[b.unit_number] then
       return recent[a.unit_number] > recent[b.unit_number]
     end
 
@@ -234,8 +232,8 @@ local make_teleporter_gui = function(player, source)
   end)
 
   local sorted_network = {}
-  for k, sorted_data in pairs (sorted) do
-    sorted_network[sorted_data.name] = sorted_data.teleporter
+  for k, sorted_script_data in pairs (sorted) do
+    sorted_network[sorted_script_data.name] = sorted_script_data.teleporter
   end
 
   local chart = player.force.chart
@@ -245,7 +243,7 @@ local make_teleporter_gui = function(player, source)
       clear_teleporter_data(teleporter)
     elseif teleporter_entity == source then
       title.caption = name
-      util.register_gui(data.button_actions, rename_button, {type = "rename_button", caption = name})
+      util.register_gui(script_data.button_actions, rename_button, {type = "rename_button", caption = name})
     else
       local position = teleporter_entity.position
       local area = {{position.x - preview_size / 2, position.y - preview_size / 2}, {position.x + preview_size / 2, position.y + preview_size / 2}}
@@ -282,7 +280,7 @@ local make_teleporter_gui = function(player, source)
       label.style.font_color = {}
       label.style.horizontally_stretchable = true
       label.style.maximal_width = preview_size
-      util.register_gui(data.button_actions, button, {type = "teleport_button", param = teleporter})
+      util.register_gui(script_data.button_actions, button, {type = "teleport_button", param = teleporter})
       any = true
     end
   end
@@ -291,32 +289,9 @@ local make_teleporter_gui = function(player, source)
   end
 end
 
-function spairs(t, order)
-  -- collect the keys
-  local keys = {}
-  for k in pairs(t) do keys[#keys+1] = k end
-
-  -- if order function given, sort by it by passing the table and keys a, b,
-  -- otherwise just sort the keys
-  if order then
-      table.sort(keys, function(a,b) return order(t, a, b) end)
-  else
-      table.sort(keys)
-  end
-
-  -- return the iterator function
-  local i = 0
-  return function()
-      i = i + 1
-      if keys[i] then
-          return keys[i], t[keys[i]]
-      end
-  end
-end
-
 local refresh_teleporter_frames = function()
   local players = game.players
-  for player_index, source in pairs (data.player_linked_teleporter) do
+  for player_index, source in pairs (script_data.player_linked_teleporter) do
     local player = players[player_index]
     local frame = get_teleporter_frame(player)
     if frame then
@@ -328,7 +303,7 @@ end
 
 local check_player_linked_teleporter = function(player)
   print("Checking player linked teleporter")
-  local source = data.player_linked_teleporter[player.index]
+  local source = script_data.player_linked_teleporter[player.index]
   if source and source.valid then
     print("Linked teleporter exists...")
     make_teleporter_gui(player, source)
@@ -349,35 +324,37 @@ local resync_teleporter = function(name, teleporter_data)
 
   clear_teleporter_data(teleporter_data)
 
-  local flying_text = teleporter.surface.create_entity
+  local flying_text = rendering.draw_text
   {
-    name = "teleporter-flying-text",
     text = name,
-    position = {teleporter.position.x, teleporter.position.y - 2},
-    force = force,
+    surface = surface,
+    alignment = "center",
+    target = {entity = teleporter, offset = {0, -2}},
+    forces = {force},
+    only_in_alt_mode = true,
+    use_rich_text = true,
     color = color
   }
-  flying_text.active = false
   teleporter_data.flying_text = flying_text
 
-  data.adding_tag = true
+  script_data.adding_tag = true
   local map_tag = force.add_chart_tag(surface,
   {
     icon = {type = "item", name = teleporter_name},
     position = teleporter.position,
     text = name
   })
-  data.adding_tag = false
+  script_data.adding_tag = false
 
   if map_tag then
     teleporter_data.tag = map_tag
-    data.tag_map[map_tag.tag_number] = teleporter_data
+    script_data.tag_map[map_tag.tag_number] = teleporter_data
   end
 
 end
 
 local is_name_available = function(force, name)
-  local network = data.networks[force.name]
+  local network = script_data.networks[force.name]
   return not network[name]
 end
 
@@ -386,7 +363,7 @@ local rename_teleporter = function(force, old_name, new_name)
     refresh_teleporter_frames()
     return
   end
-  local network = data.networks[force.name]
+  local network = script_data.networks[force.name]
   local teleporter_data = network[old_name]
   network[new_name] = teleporter_data
   network[old_name] = nil
@@ -469,7 +446,7 @@ local gui_actions =
     local search = box.text
     local parent = param.parent
     for k, child in pairs (parent.children) do
-      child.visible = child.name:lower():find(search:lower(), 1, true)
+      child.visible = child.name:lower():find(search:lower(), 1, true) ~= nil
     end
   end,
   search_button = function(event, param)
@@ -480,10 +457,10 @@ local gui_actions =
 
 local get_network = function(force)
   local name = force.name
-  local network = data.networks[name]
+  local network = script_data.networks[name]
   if network then return network end
-  data.networks[name] = {}
-  return data.networks[name]
+  script_data.networks[name] = {}
+  return script_data.networks[name]
 end
 
 local on_built_entity = function(event)
@@ -496,7 +473,7 @@ local on_built_entity = function(event)
   local network = get_network(force)
   local teleporter_data = {teleporter = entity, flying_text = text, tag = tag}
   network[name] = teleporter_data
-  data.teleporter_map[entity.unit_number] = teleporter_data
+  script_data.teleporter_map[entity.unit_number] = teleporter_data
   resync_teleporter(name, teleporter_data)
   refresh_teleporter_frames()
 end
@@ -505,17 +482,17 @@ local on_teleporter_removed = function(entity)
   if not (entity and entity.valid) then return end
   if entity.name ~= teleporter_name then return end
   local force = entity.force
-  local teleporter_data = data.teleporter_map[entity.unit_number]
+  local teleporter_data = script_data.teleporter_map[entity.unit_number]
   if not teleporter_data then return end
   local caption = teleporter_data.flying_text.text
   local network = get_network(force)
   network[caption] = nil
   clear_teleporter_data(teleporter_data)
-  data.teleporter_map[entity.unit_number] = nil
+  script_data.teleporter_map[entity.unit_number] = nil
 
-  data.to_be_removed[entity.unit_number] = true
+  script_data.to_be_removed[entity.unit_number] = true
   refresh_teleporter_frames()
-  data.to_be_removed[entity.unit_number] = nil
+  script_data.to_be_removed[entity.unit_number] = nil
 end
 
 local teleporter_triggered = function(entity, character)
@@ -524,14 +501,14 @@ local teleporter_triggered = function(entity, character)
   local force = entity.force
   local surface = entity.surface
   local position = entity.position
-  local param = data.teleporter_map[entity.unit_number]
+  local param = script_data.teleporter_map[entity.unit_number]
   local player = character.player
   if not player then return end
   player.teleport(entity.position)
   entity.active = false
   entity.timeout = entity.prototype.timeout
   character.active = false
-  data.player_linked_teleporter[player.index] = entity
+  script_data.player_linked_teleporter[player.index] = entity
   make_teleporter_gui(player, entity)
 end
 
@@ -557,9 +534,9 @@ end
 local on_gui_action = function(event)
   local element = event.element
   if not (element and element.valid) then return end
-  local player_data = data.button_actions[event.player_index]
-  if not player_data then return end
-  local action = player_data[element.index]
+  local player_script_data = script_data.button_actions[event.player_index]
+  if not player_script_data then return end
+  local action = player_script_data[element.index]
   if action then
     gui_actions[action.type](event, action)
     return true
@@ -599,7 +576,7 @@ local on_player_removed = function(event)
 end
 
 local resync_all_teleporters = function()
-  for force, network in pairs (data.networks) do
+  for force, network in pairs (script_data.networks) do
     for name, teleporter_data in pairs (network) do
       resync_teleporter(name, teleporter_data)
     end
@@ -610,7 +587,7 @@ local on_chart_tag_modified = function(event)
   local force = event.force
   local tag = event.tag
   if not (force and force.valid and tag and tag.valid) then return end
-  local teleporter_data = data.tag_map[tag.tag_number]
+  local teleporter_data = script_data.tag_map[tag.tag_number]
   if not teleporter_data then
     --Nothing to do with us...
     return
@@ -641,7 +618,7 @@ local on_chart_tag_removed = function(event)
   local force = event.force
   local tag = event.tag
   if not (force and force.valid and tag and tag.valid) then return end
-  local teleporter_data = data.tag_map[tag.tag_number]
+  local teleporter_data = script_data.tag_map[tag.tag_number]
   if not teleporter_data then
     --Nothing to do with us...
     return
@@ -651,7 +628,7 @@ local on_chart_tag_removed = function(event)
 end
 
 local on_chart_tag_added = function(event)
-  if data.adding_tag then return end
+  if script_data.adding_tag then return end
   local tag = event.tag
   if not (tag and tag.valid) then
     return
@@ -667,7 +644,7 @@ local on_chart_tag_added = function(event)
 end
 
 local toggle_search = function(player)
-  local box = data.search_boxes[player.index]
+  local box = script_data.search_boxes[player.index]
   if not (box and box.valid) then return end
   box.visible = true
   box.focus()
@@ -785,28 +762,15 @@ teleporters.events =
 }
 
 teleporters.on_init = function()
-  global.teleporters = global.teleporters or data
+  storage.teleporters = storage.teleporters or script_data
 end
 
 teleporters.on_load = function()
-  data = global.teleporters
+  script_data = storage.teleporters
 end
 
 teleporters.on_configuration_changed = function()
-  -- 0.1.2 migration...
-  data.player_linked_teleporter = data.player_linked_teleporter or {}
-  data.rename_frames = data.rename_frames or data.frames or {}
-  data.to_be_removed = data.to_be_removed or {}
-
-  --0.1.5...
-  data.teleporter_map = data.teleporter_map or data.map or {}
-  data.tag_map = data.tag_map or {}
   resync_all_teleporters()
-
-  --0.1.7...
-  data.search_boxes = data.search_boxes or {}
-
-  data.recent = data.recent or {}
 end
 
 return teleporters

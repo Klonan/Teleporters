@@ -33,45 +33,27 @@ teleporter.trigger_force = "all"
 teleporter.order = name
 teleporter.picture_safe =
 {
-  filename = path.."teleporter-closed.png",
+  filename = path.."hr-teleporter-closed.png",
   priority = "medium",
-  width = 80,
-  height = 80,
-  hr_version = {
-    filename = path.."hr-teleporter-closed.png",
-    priority = "medium",
-    width = 160,
-    height = 160,
-    scale = 0.5,
-  }
+  width = 160,
+  height = 160,
+  scale = 0.5,
 }
 teleporter.picture_set =
 {
-  filename = path.."teleporter-open.png",
+  filename = path.."hr-teleporter-open.png",
   priority = "medium",
-  width = 80,
-  height = 80,
-  hr_version = {
-    filename = path.."hr-teleporter-open.png",
-    priority = "medium",
-    width = 160,
-    height = 160,
-    scale = 0.5,
-  }
+  width = 160,
+  height = 160,
+  scale = 0.5,
 }
 teleporter.picture_set_enemy =
 {
-  filename = path.."teleporter-open.png",
+  filename = path.."hr-teleporter-open.png",
   priority = "medium",
-  width = 80,
-  height = 80,
-  hr_version = {
-    filename = path.."hr-teleporter-open.png",
-    priority = "medium",
-    width = 160,
-    height = 160,
-    scale = 0.5,
-  }
+  width = 160,
+  height = 160,
+  scale = 0.5,
 }
 teleporter.minable = {result = name, mining_time = 3}
 teleporter.flags =
@@ -131,12 +113,12 @@ local recipe = {
   enabled = false,
   ingredients =
   {
-    {"steel-plate", 45},
-    {"advanced-circuit", 20},
-    {"battery", 25},
+    {type = "item", name = "steel-plate", amount = 45},
+    {type = "item", name = "advanced-circuit", amount = 20},
+    {type = "item", name = "battery", amount = 25},
   },
   energy_required = 5,
-  result = name
+  results = {{type = "item", name = name, amount = 1}}
 }
 
 local technology =
@@ -164,12 +146,9 @@ local technology =
     },
     time = 30
   },
-  prerequisites = {"advanced-electronics", "battery"},
+  prerequisites = {"advanced-circuit", "battery"},
   order = "y-a"
 }
-
-local teleporter_flying_text = util.copy(data.raw["flying-text"]["tutorial-flying-text"])
-teleporter_flying_text.name = "teleporter-flying-text"
 
 local hotkey_name = require"shared".hotkeys.focus_search
 local hotkey =
@@ -188,7 +167,6 @@ data:extend
   teleporter_explosion_2,
   recipe,
   technology,
-  teleporter_flying_text,
   hotkey,
   sticker
 }
