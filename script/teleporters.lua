@@ -734,11 +734,14 @@ teleporters.events =
   [defines.events.script_raised_built] = on_built_entity,
   [defines.events.script_raised_revive] = on_built_entity,
   [defines.events.on_entity_cloned] = on_built_entity,
+  [defines.events.on_space_platform_built_entity] = on_built_entity,
+
 
   [defines.events.on_entity_died] = on_entity_removed,
   [defines.events.on_player_mined_entity] = on_entity_removed,
   [defines.events.on_robot_mined_entity] = on_entity_removed,
   [defines.events.script_raised_destroy] = on_entity_removed,
+  [defines.events.on_space_platform_mined_entity] = on_entity_removed,
 
   [defines.events.on_gui_click] = on_gui_action,
   [defines.events.on_gui_text_changed] = on_gui_action,
@@ -756,8 +759,8 @@ teleporters.events =
   [defines.events.on_chart_tag_removed] = on_chart_tag_removed,
   [defines.events.on_chart_tag_added] = on_chart_tag_added,
 
-  [defines.events.on_trigger_created_entity] = on_trigger_created_entity,
-  [defines.events.on_rocket_launched] = on_rocket_launched
+  [defines.events.on_trigger_created_entity] = on_trigger_created_entity
+  --[defines.events.on_rocket_launched] = on_rocket_launched
 
 }
 
