@@ -3,5 +3,9 @@
     "spell-check",
     "codestyle-check",
     "undefined-global"
-  ]
+  ],
+  "Lua.workspace.userThirdParty": [
+    "c:\\Users\\cibul\\AppData\\Roaming\\Code\\User\\workspaceStorage\\6e035e1b933a70cf6459b875ea175a60\\justarandomgeek.factoriomod-debug\\sumneko-3rd"
+  ],
+  "Lua.workspace.checkThirdParty": "ApplyInMemory"
 }
