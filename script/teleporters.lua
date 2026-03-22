@@ -584,6 +584,7 @@ local resync_all_teleporters = function()
 end
 
 local on_chart_tag_modified = function(event)
+  if script_data.reverting_tag then return end
   local force = event.force
   local tag = event.tag
   if not (force and force.valid and tag and tag.valid) then return end
@@ -608,7 +609,9 @@ local on_chart_tag_modified = function(event)
     if player and player.valid then
       player.print({"name-already-taken"})
     end
+    script_data.reverting_tag = true
     tag.text = old_name
+    script_data.reverting_tag = nil
     return
   end
   rename_teleporter(force, old_name, new_name)
