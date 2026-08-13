@@ -219,10 +219,12 @@ local make_teleporter_gui = function(player, source)
   local i = 1
   for name, teleporter in pairs (network) do
     if teleporter.teleporter.valid then
-      sorted[i] = {name = name, teleporter = teleporter, unit_number = teleporter.teleporter.unit_number}
-      i = i + 1
-    else
-      clear_teleporter_data(teleporter)
+      if settings.global["teleport_everywhere"].value or teleporter.teleporter.surface.planet.name == player.surface.name then
+        sorted[i] = {name = name, teleporter = teleporter, unit_number = teleporter.teleporter.unit_number}
+        i = i + 1
+      else
+        clear_teleporter_data(teleporter)
+      end
     end
   end
 
