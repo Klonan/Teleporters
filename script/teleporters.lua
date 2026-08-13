@@ -456,9 +456,36 @@ local gui_actions =
     local destination_position = destination.position
     local player = game.players[event.player_index]
     if not (player and player.valid) then return end
+
+    if player.surface ~= destination_surface then 
+      local inventory_empty = true
+      
+      for _, item in pairs(player.get_inventory(defines.inventory.character_main).get_contents()) do
+          inventory_empty = false
+          break
+      end
+
+      for _, item in pairs(player.get_inventory(defines.inventory.character_ammo).get_contents()) do
+          inventory_empty = false
+          break
+      end
+
+      local teleport_research_completed = player.force.technologies["teleport-with-inventory-reseach"] and player.force.technologies["teleport-with-inventory"].researched
+	  
+	  -- I've tried, but failed to make this work. sorry...
+	  local teleport_with_inventory_research_required = settings.global["teleport-with-inventory-reseach"] == nil or settings.global["teleport-with-inventory-reseach"].value
+
+      if teleport_with_inventory_research_required and not inventory_empty and not teleport_research_completed then
+		  local msg = "Empty inventory and ammo or 'Teleport with inventory' research are required to teleport to other planet!"
+		  player.print(msg)
+          player.create_local_flying_text({text = msg, position = player.position, color = {r = 1, g = 0, b = 0}})
+		  return
+      end
+    end
+
     create_flash(destination_surface, destination_position)
     create_flash(player.surface, player.position)
-    --This teleport doesn't check collisions. If someone complains, make it check 'can_place' and if false find a positions etc....
+    -- This teleport doesn't check collisions. If someone complains, make it check 'can_place' and if false find a positions etc....
     player.teleport(destination_position, destination_surface)
     unlink_teleporter(player)
     add_recent(player, destination)
